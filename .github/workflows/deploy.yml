@@ -29,5 +29,8 @@ jobs:
           ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Run Ansible Playbook
+      env:
+        SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
       run: |
-        ansible-playbook -i ansible/inventory.ini ansible/check_version.yml
+        ansible-playbook -vvv -i ansible/inventory.ini ansible/check_version.yml
+
