@@ -18,4 +18,4 @@ pada lingkungan Edge IoT menggunakan Ansible dan GitHub Actions.
 =======
 
 - Testing CI/CD pipeline trigger
-
+- CEK123
