@@ -4,18 +4,11 @@
   connection: network_cli
 
   tasks:
-    - name: Hapus lease lama Edge-01 (jika ada)
+    - name: Update IP DHCP static lease Edge-01
       community.routeros.command:
         commands:
           - >
-            /ip dhcp-server lease remove
+            /ip dhcp-server lease set
             [find mac-address=08:00:27:23:4d:43]
-
-    - name: Buat DHCP reservation baru Edge-01
-      community.routeros.command:
-        commands:
-          - >
-            /ip dhcp-server lease add
-            mac-address=08:00:27:23:4d:43
             address=172.168.10.50
             comment="Edge-01 via CI/CD"
