@@ -4,7 +4,7 @@
   connection: network_cli
 
   vars_files:
-    - vars/edge_devices.yml
+    - "{{ playbook_dir }}/vars/edge_devices.yml"
 
   tasks:
     - name: Debug edge_devices (validasi variabel)
