@@ -1,0 +1,16 @@
+---
+- name: Ubah DHCP Reservation Edge IoT
+  hosts: mikrotik
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Set DHCP reservation untuk Edge-01
+      community.routeros.command:
+        commands:
+          - /ip dhcp-server lease set [find mac-address=08:00:27:23:4d:43] address=172.168.10.50 comment="Edge-01 via CI/CD"
+
+    - name: Renew DHCP lease Edge-01
+      community.routeros.command:
+        commands:
+          - /ip dhcp-server lease renew [find mac-address=08:00:27:23:4d:43]
