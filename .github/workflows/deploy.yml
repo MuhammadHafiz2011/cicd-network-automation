@@ -1,36 +1,29 @@
-name: CI/CD MikroTik Network Automation
+name: Deploy DHCP Reservation
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - "ansible/**"
 
 jobs:
   deploy:
     runs-on: self-hosted
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install Ansible & dependencies
-      run: |
-        pip install ansible ansible-pylibssh paramiko
-        ansible-galaxy collection install community.routeros
+      - name: Install Ansible & dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible ansible-pylibssh
+          ansible-galaxy collection install community.routeros
 
-    - name: Setup SSH agent
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Run Ansible Playbook
-      env:
-        SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
-      run: |
-        ansible-playbook -vvv -i ansible/inventory.ini ansible/check_version.yml
-
+      - name: Run DHCP Reservation Playbook
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/dhcp_reservation.yml

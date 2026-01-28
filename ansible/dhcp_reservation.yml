@@ -1,14 +1,33 @@
-- name: Ubah DHCP Reservation Edge IoT
+---
+- name: DHCP Reservation Edge IoT via CI/CD
   hosts: mikrotik
   gather_facts: no
   connection: network_cli
+  vars_files:
+    - vars/edge_devices.yml
 
   tasks:
-    - name: Update IP DHCP static lease Edge-01
+
+    - name: Pastikan DHCP lease menjadi static
+      community.routeros.command:
+        commands:
+          - >
+            /ip dhcp-server lease make-static
+            [find mac-address={{ item.mac }}]
+      loop: "{{ edge_devices }}"
+
+    - name: Set IP DHCP reservation sesuai variabel
       community.routeros.command:
         commands:
           - >
             /ip dhcp-server lease set
-            [find mac-address=08:00:27:23:4d:43]
-            address=172.168.10.50
-            comment="Edge-01 via CI/CD"
+            [find mac-address={{ item.mac }}]
+            address={{ item.ip }}
+            comment="{{ item.comment }}"
+      loop: "{{ edge_devices }}"
+
+    - name: Force renew DHCP dengan reset interface
+      community.routeros.command:
+        commands:
+          - /interface disable ether2
+          - /interface enable ether2
