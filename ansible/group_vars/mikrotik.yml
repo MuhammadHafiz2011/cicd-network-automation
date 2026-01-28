@@ -1,10 +1,10 @@
 edge_devices:
   - name: edge-01
     mac: "08:00:27:23:4d:43"
-    ip: "172.168.10.50"
+    ip: 172.168.10.50
     comment: "Edge-01 via CI/CD"
 
   - name: edge-02
     mac: "08:00:27:1a:af:5f"
-    ip: "172.168.20.34"
+    ip: 172.168.20.34
     comment: "Edge-02 via CI/CD"

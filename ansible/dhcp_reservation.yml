@@ -3,15 +3,12 @@
   gather_facts: no
   connection: network_cli
 
-  vars_files:
-    - "{{ playbook_dir }}/vars/edge_devices.yml"
-
   tasks:
-    - name: Debug edge_devices (validasi variabel)
+    - name: Debug edge_devices (HARUS MUNCUL)
       debug:
         var: edge_devices
 
-    - name: Pastikan DHCP lease menjadi static
+    - name: Make DHCP lease static
       community.routeros.command:
         commands:
           - >
@@ -19,7 +16,7 @@
             [find mac-address={{ item.mac }}]
       loop: "{{ edge_devices }}"
 
-    - name: Set IP DHCP reservation
+    - name: Set DHCP reservation IP
       community.routeros.command:
         commands:
           - >
@@ -29,7 +26,7 @@
             comment="{{ item.comment }}"
       loop: "{{ edge_devices }}"
 
-    - name: Renew DHCP lease (reset interface ether2)
+    - name: Renew DHCP (reset interface ether2)
       community.routeros.command:
         commands:
           - /interface disable ether2
