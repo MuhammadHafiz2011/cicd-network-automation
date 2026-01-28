@@ -1,16 +1,21 @@
----
 - name: Ubah DHCP Reservation Edge IoT
   hosts: mikrotik
   gather_facts: no
   connection: network_cli
 
   tasks:
-    - name: Set DHCP reservation untuk Edge-01
+    - name: Hapus lease lama Edge-01 (jika ada)
       community.routeros.command:
         commands:
-          - /ip dhcp-server lease set [find mac-address=08:00:27:23:4d:43] address=172.168.10.50 comment="Edge-01 via CI/CD"
+          - >
+            /ip dhcp-server lease remove
+            [find mac-address=08:00:27:23:4d:43]
 
-    - name: Renew DHCP lease Edge-01
+    - name: Buat DHCP reservation baru Edge-01
       community.routeros.command:
         commands:
-          - /ip dhcp-server lease renew [find mac-address=08:00:27:23:4d:43]
+          - >
+            /ip dhcp-server lease add
+            mac-address=08:00:27:23:4d:43
+            address=172.168.10.50
+            comment="Edge-01 via CI/CD"
