@@ -1,14 +1,12 @@
----
 - name: DHCP Reservation Edge IoT via CI/CD
   hosts: mikrotik
   gather_facts: no
   connection: network_cli
 
   vars_files:
-    - ansible/vars/edge_devices.yml
+    - vars/edge_devices.yml
 
   tasks:
-
     - name: Debug edge_devices (validasi variabel)
       debug:
         var: edge_devices
@@ -31,7 +29,7 @@
             comment="{{ item.comment }}"
       loop: "{{ edge_devices }}"
 
-    - name: Reset interface agar DHCP renew
+    - name: Renew DHCP lease (reset interface ether2)
       community.routeros.command:
         commands:
           - /interface disable ether2
