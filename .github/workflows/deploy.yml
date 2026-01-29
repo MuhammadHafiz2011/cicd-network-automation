@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "ansible/**"
+      - "github/workflows/**"
 
 jobs:
   deploy:
@@ -26,5 +27,8 @@ jobs:
 
       - name: Run Network Deployment
         env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
           ANSIBLE_SSH_ARGS: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-        run: ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.ini deploy.yml
