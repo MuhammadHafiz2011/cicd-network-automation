@@ -1,23 +1,22 @@
 lan_interfaces:
   - name: ether2
-    ip: 172.168.10.1/24
-
-lan_interfaces:
+    ip: 172.192.10.1/24
   - name: ether3
     ip: 192.168.40.1/24
 
-dhcp:
-  interface: ether2
-  pool_name: iot_pool
-  pool_range: 172.168.10.10-172.168.10.100
-  network: 172.168.10.0/24
-  gateway: 172.168.10.1
-  dns: 8.8.8.8
+dhcp_servers:
+  - interface: ether2
+    pool_name: iot_pool
+    pool_range: 172.192.10.10-172.192.10.100
+    network: 172.192.10.0/24
+    gateway: 172.192.10.1
+    dns: 8.8.8.8
 
-dhcp:
-  interface: ether3
-  pool_name: dhcp_pool2
-  pool_range: 192.168.40.10-192.168.40.100
-  network: 192.168.40.0/24
-  gateway: 192.168.40.1
-  dns: 8.8.8.8
+  - interface: ether3
+    pool_name: dhcp_pool2
+    pool_range: 192.168.40.10-192.168.40.100
+    network: 192.168.40.0/24
+    gateway: 192.168.40.1
+    dns: 8.8.8.8
+
+
