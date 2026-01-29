@@ -1,0 +1,8 @@
+- name: Deploy Konfigurasi MikroTik
+  hosts: mikrotik
+  gather_facts: no
+  connection: network_cli
+
+  roles:
+    - ip_address
+    - dhcp

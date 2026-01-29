@@ -1,0 +1,12 @@
+- name: Hapus IP lama di interface LAN
+  community.routeros.command:
+    commands:
+      - /ip address remove [find interface={{ item.name }}]
+  loop: "{{ lan_interfaces }}"
+  ignore_errors: yes
+
+- name: Set IP baru di interface LAN
+  community.routeros.command:
+    commands:
+      - /ip address add address={{ item.ip }} interface={{ item.name }}
+  loop: "{{ lan_interfaces }}"
