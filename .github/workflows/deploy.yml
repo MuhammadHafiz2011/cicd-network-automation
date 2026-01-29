@@ -24,6 +24,5 @@ jobs:
           pip install ansible ansible-pylibssh
           ansible-galaxy collection install community.routeros
 
-      - name: Run DHCP Reservation Playbook
-        run: |
-          ansible-playbook -i ansible/inventory.ini ansible/dhcp_reservation.yml
+      - name: Run Network Deployment
+        run: ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
