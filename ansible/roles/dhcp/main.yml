@@ -1,10 +1,10 @@
-- name: Hapus DHCP lama (jika ada)
+- name: Hapus DHCP lama
   community.routeros.command:
     commands:
       - /ip dhcp-server remove [find interface={{ dhcp.interface }}]
   ignore_errors: yes
 
-- name: Hapus IP Pool lama (jika ada)
+- name: Hapus IP Pool lama
   community.routeros.command:
     commands:
       - /ip pool remove [find name={{ dhcp.pool_name }}]
@@ -18,18 +18,9 @@
 - name: Buat DHCP Network
   community.routeros.command:
     commands:
-      - >
-        /ip dhcp-server network add
-        address={{ dhcp.network }}
-        gateway={{ dhcp.gateway }}
-        dns-server={{ dhcp.dns }}
+      - /ip dhcp-server network add address={{ dhcp.network }} gateway={{ dhcp.gateway }} dns-server={{ dhcp.dns }}
 
 - name: Buat DHCP Server
   community.routeros.command:
     commands:
-      - >
-        /ip dhcp-server add
-        name=dhcp-{{ dhcp.interface }}
-        interface={{ dhcp.interface }}
-        address-pool={{ dhcp.pool_name }}
-        disabled=no
+      - /ip dhcp-server add name=dhcp-{{ dhcp.interface }} interface={{ dhcp.interface }} address-pool={{ dhcp.pool_name }} disabled=no
