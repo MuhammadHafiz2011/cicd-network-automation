@@ -30,3 +30,7 @@
       - /ip dhcp-server add name=dhcp-{{ item.interface }} interface={{ item.interface }} address-pool={{ item.pool_name }} disabled=no
   loop: "{{ dhcp_servers }}"
 
+
+# Membersihkan konfigurasi DHCP lama
+# Membuat DHCP Pool baru
+# Mengaktifkan DHCP Server

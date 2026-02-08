@@ -10,3 +10,6 @@
     commands:
       - /ip address add address={{ item.ip }} interface={{ item.name }}
   loop: "{{ lan_interfaces }}"
+
+# Menghapus IP lama pada interface LAN (Jika ada)
+# Menetapkan IP baru pada interface LAN

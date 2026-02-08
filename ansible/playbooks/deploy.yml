@@ -6,3 +6,6 @@
   roles:
     - ip_address
     - dhcp
+
+# Playbook utama untuk deploy konfigurasi jaringan ke MikroTik
+# Menggunakan role agar modular dan mudah dikembangkan

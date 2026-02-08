@@ -1,0 +1,48 @@
+- name: CI – Check Network Configuration (Read Only)
+  hosts: mikrotik
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Cek koneksi ke MikroTik
+      community.routeros.command:
+        commands:
+          - /system identity print
+      register: identity_result
+
+    - name: Tampilkan identitas router
+      debug:
+        msg: "Terhubung ke router: {{ identity_result.stdout_lines[0] }}"
+
+    - name: Cek interface yang tersedia
+      community.routeros.command:
+        commands:
+          - /interface print
+      register: interface_result
+
+    - name: Validasi interface ada
+      assert:
+        that:
+          - interface_result.stdout is defined
+        success_msg: "Interface tersedia, CI sukses"
+        fail_msg: "Interface tidak ditemukan, CI gagal"
+
+    - name: Cek IP address saat ini
+      community.routeros.command:
+        commands:
+          - /ip address print
+      register: ip_result
+
+    - name: Tampilkan IP address
+      debug:
+        var: ip_result.stdout_lines
+
+    - name: Cek DHCP server
+      community.routeros.command:
+        commands:
+          - /ip dhcp-server print
+      register: dhcp_result
+
+    - name: Tampilkan DHCP server
+      debug:
+        var: dhcp_result.stdout_lines

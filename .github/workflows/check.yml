@@ -1,6 +1,9 @@
-name: Deploy MikroTik Configuration
+name: CI – Check MikroTik Configuration
 
 on:
+  pull_request:
+    paths:
+      - "ansible/**"
   push:
     branches:
       - main
@@ -8,7 +11,7 @@ on:
       - "ansible/**"
 
 jobs:
-  deploy:
+  check:
     runs-on: self-hosted
 
     steps:
@@ -18,7 +21,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install Ansible & dependencies
         run: |
@@ -26,10 +29,10 @@ jobs:
           pip install ansible ansible-pylibssh
           ansible-galaxy collection install community.routeros
 
-      - name: Run Network Deployment
+      - name: Run CI Check (Read Only)
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
           ANSIBLE_SSH_ARGS: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         run: |
           cd ansible
-          ansible-playbook playbooks/deploy.yml
+          ansible-playbook playbooks/check.yml
