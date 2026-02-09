@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "ansible/**"
+      - "ansible/group_vars/**"
+      - "ansible/roles/**"
+      - "ansible/playbooks/deploy.yml"
 
 jobs:
   deploy:
