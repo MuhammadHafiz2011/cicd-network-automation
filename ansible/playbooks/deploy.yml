@@ -1,4 +1,4 @@
-- name: Deploy Konfigurasi MikroTik
+- name: CD Deploy - Apply MikroTik Network Configuration
   hosts: mikrotik
   gather_facts: no
   connection: network_cli

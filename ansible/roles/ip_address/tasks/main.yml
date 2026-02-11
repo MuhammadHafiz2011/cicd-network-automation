@@ -1,15 +1,5 @@
-- name: Hapus IP lama di interface LAN
+- name: Configure IP address on interface
   community.routeros.command:
     commands:
-      - /ip address remove [find interface={{ item.name }}]
-  loop: "{{ lan_interfaces }}"
-  ignore_errors: yes
-
-- name: Set IP baru di interface LAN
-  community.routeros.command:
-    commands:
-      - /ip address add address={{ item.ip }} interface={{ item.name }}
-  loop: "{{ lan_interfaces }}"
-
-# Menghapus IP lama pada interface LAN (Jika ada)
-# Menetapkan IP baru pada interface LAN
+      - /ip address set [find interface={{ item.interface }}] address={{ item.address }}
+  loop: "{{ ip_interfaces }}"

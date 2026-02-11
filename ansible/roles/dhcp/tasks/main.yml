@@ -1,36 +1,31 @@
-- name: Hapus DHCP lama
+- name: Ensure DHCP Server Disabled
   community.routeros.command:
     commands:
-      - /ip dhcp-server remove [find interface={{ item.interface }}]
+      - /ip dhcp-server disable [find interface={{ item.interface }}]
   loop: "{{ dhcp_servers }}"
   ignore_errors: yes
 
-- name: Hapus IP Pool lama
+- name: Remove existing IP Pool
   community.routeros.command:
     commands:
       - /ip pool remove [find name={{ item.pool_name }}]
   loop: "{{ dhcp_servers }}"
   ignore_errors: yes
 
-- name: Buat IP Pool DHCP
+- name: Create IP Pool
   community.routeros.command:
     commands:
       - /ip pool add name={{ item.pool_name }} ranges={{ item.pool_range }}
   loop: "{{ dhcp_servers }}"
 
-- name: Buat DHCP Network
+- name: Configure DHCP Network
   community.routeros.command:
     commands:
       - /ip dhcp-server network add address={{ item.network }} gateway={{ item.gateway }} dns-server={{ item.dns }}
   loop: "{{ dhcp_servers }}"
 
-- name: Buat DHCP Server
+- name: Enable DHCP Server
   community.routeros.command:
     commands:
-      - /ip dhcp-server add name=dhcp-{{ item.interface }} interface={{ item.interface }} address-pool={{ item.pool_name }} disabled=no
+      - /ip dhcp-server enable [find interface={{ item.interface }}]
   loop: "{{ dhcp_servers }}"
-
-
-# Membersihkan konfigurasi DHCP lama
-# Membuat DHCP Pool baru
-# Mengaktifkan DHCP Server
