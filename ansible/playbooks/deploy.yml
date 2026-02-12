@@ -1,11 +1,34 @@
-- name: Deploy Konfigurasi MikroTik
+- name: Pre Deployment Validation
   hosts: mikrotik
   gather_facts: no
-  connection: network_cli
+
+  tasks:
+
+    - name: Validate interface IP format
+      assert:
+        that:
+          - item.address is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]+$")
+        fail_msg: "Format IP pada interface {{ item.interface }} tidak valid"
+      loop: "{{ ip_interfaces }}"
+
+    - name: Validate DHCP pool range format
+      assert:
+        that:
+          - item.pool_range is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}-(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        fail_msg: "Format DHCP pool pada {{ item.interface }} tidak valid"
+      loop: "{{ dhcp_servers }}"
+
+    - name: Validate DHCP gateway format
+      assert:
+        that:
+          - item.gateway is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        fail_msg: "Gateway pada {{ item.interface }} tidak valid"
+      loop: "{{ dhcp_servers }}"
+
+- name: Deploy MikroTik Configuration
+  hosts: mikrotik
+  gather_facts: no
 
   roles:
     - ip_address
     - dhcp
-
-# Playbook utama untuk deploy konfigurasi jaringan ke MikroTik
-# Menggunakan role agar modular dan mudah dikembangkan
