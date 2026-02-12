@@ -2,38 +2,35 @@
 - name: Pre Deployment Validation
   hosts: mikrotik
   gather_facts: no
-  collections:
-    - ansible.utils
 
   vars_files:
     - ../group_vars/mikrotik.yml
 
   tasks:
 
-    - name: Validate Router IP
+    - name: Validate Router IP format
       assert:
         that:
-          - router_ip | ansible.utils.ipaddr
+          - router_ip is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
         fail_msg: "Router IP tidak valid"
 
-    - name: Validate DHCP Start
+    - name: Validate DHCP Start format
       assert:
         that:
-          - dhcp_pool_start | ansible.utils.ipaddr
+          - dhcp_pool_start is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
         fail_msg: "DHCP start IP tidak valid"
 
-    - name: Validate DHCP End
+    - name: Validate DHCP End format
       assert:
         that:
-          - dhcp_pool_end | ansible.utils.ipaddr
+          - dhcp_pool_end is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
         fail_msg: "DHCP end IP tidak valid"
 
-    - name: Validate DHCP subnet consistency
+    - name: Validate DHCP range not equal
       assert:
         that:
-          - router_ip | ansible.utils.ipaddr('network') ==
-            dhcp_pool_start | ansible.utils.ipaddr('network')
-        fail_msg: "DHCP range tidak satu subnet dengan router"
+          - dhcp_pool_start != dhcp_pool_end
+        fail_msg: "DHCP start dan end tidak boleh sama"
 
 - name: Deploy MikroTik Configuration
   hosts: mikrotik

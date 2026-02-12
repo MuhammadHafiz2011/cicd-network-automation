@@ -12,11 +12,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install Required Collections
-        run: |
-          cd ansible
-          ansible-galaxy collection install ansible.utils
-
       - name: Syntax Check
         run: |
           cd ansible
