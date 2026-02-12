@@ -1,14 +1,19 @@
-name: CI - Check MikroTik Config
+name: CI Validation
 
 on:
   pull_request:
+    branches: [ main ]
 
 jobs:
-  check:
+  validate:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Run Ansible Check
-        run: ansible-playbook -i ansible/inventory.ini ansible/playbooks/check.yml
+      - name: Syntax Check
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --syntax-check
+
+      - name: Dry Run Simulation
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy.yml --check --diff
