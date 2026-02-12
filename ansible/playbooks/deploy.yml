@@ -1,6 +1,8 @@
 - name: Pre Deployment Validation
-  hosts: mikrotik
+  hosts: localhost
   gather_facts: no
+  vars_files:
+    - ../group_vars/mikrotik.yml
 
   tasks:
 
@@ -25,9 +27,18 @@
         fail_msg: "Gateway pada {{ item.interface }} tidak valid"
       loop: "{{ dhcp_servers }}"
 
+
 - name: Deploy MikroTik Configuration
   hosts: mikrotik
   gather_facts: no
+
+  tasks:
+
+    - name: Check MikroTik Connectivity
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        timeout: 5
 
   roles:
     - ip_address
