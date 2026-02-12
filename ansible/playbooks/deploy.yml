@@ -1,36 +1,29 @@
----
 - name: Pre Deployment Validation
   hosts: mikrotik
   gather_facts: no
 
-  vars_files:
-    - group_vars/mikrotik.yml
-
   tasks:
 
-    - name: Validate Router IP format
+    - name: Validate interface IP format
       assert:
         that:
-          - router_ip is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-        fail_msg: "Router IP tidak valid"
+          - item.address is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]+$")
+        fail_msg: "Format IP pada interface {{ item.interface }} tidak valid"
+      loop: "{{ ip_interfaces }}"
 
-    - name: Validate DHCP Start format
+    - name: Validate DHCP pool range format
       assert:
         that:
-          - dhcp_pool_start is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-        fail_msg: "DHCP start IP tidak valid"
+          - item.pool_range is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}-(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        fail_msg: "Format DHCP pool pada {{ item.interface }} tidak valid"
+      loop: "{{ dhcp_servers }}"
 
-    - name: Validate DHCP End format
+    - name: Validate DHCP gateway format
       assert:
         that:
-          - dhcp_pool_end is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-        fail_msg: "DHCP end IP tidak valid"
-
-    - name: Validate DHCP range not equal
-      assert:
-        that:
-          - dhcp_pool_start != dhcp_pool_end
-        fail_msg: "DHCP start dan end tidak boleh sama"
+          - item.gateway is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        fail_msg: "Gateway pada {{ item.interface }} tidak valid"
+      loop: "{{ dhcp_servers }}"
 
 - name: Deploy MikroTik Configuration
   hosts: mikrotik
