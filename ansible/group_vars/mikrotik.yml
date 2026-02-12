@@ -8,7 +8,7 @@ ip_interfaces:
 dhcp_servers:
   - interface: ether2
     pool_name: iot_pool
-    pool_range: 192.172.15.10-192.172.17.30
+    pool_range: 192.172.17.10-192.172.17.50
     network: 192.172.17.0/24
     gateway: 192.172.17.1
     dns: 8.8.8.8
