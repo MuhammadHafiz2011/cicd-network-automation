@@ -2,7 +2,7 @@
 
 ## Overvieww
 
-Project ini mengimplementasikan otomatisasi konfigurasi jaringan menggunakan pendekatan CI/CD.
+PProject ini mengimplementasikan otomatisasi konfigurasi jaringan menggunakan pendekatan CI/CD.
 
 Perubahan konfigurasi (IP & DHCP) divalidasi terlebih dahulu melalui pipeline CI sebelum dideploy ke router MikroTik melalui CD.
 
