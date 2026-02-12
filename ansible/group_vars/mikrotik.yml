@@ -17,7 +17,7 @@ ip_interfaces:
 dhcp_servers:
   - name: dhcp_edge
     interface: ether2
-    pool_range: 192.172.17.10-192.172.17.50
+    pool_range: 192.172.17.10-ABC
     network: 192.172.17.0/24
     gateway: 192.172.17.1
     dns: 8.8.8.8
