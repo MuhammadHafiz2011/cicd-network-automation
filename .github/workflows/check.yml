@@ -12,6 +12,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install ansible ansible-lint yamllint
+
+      - name: YAML Lint
+        run: |
+          yamllint ansible/
+
+      - name: Ansible Lint
+        run: |
+          cd ansible
+          ansible-lint playbooks/deploy.yml
+
+      - name: Inventory Validation
+        run: |
+          cd ansible
+          ansible-inventory -i inventory.ini --list
+
       - name: Syntax Check
         run: |
           cd ansible

@@ -1,6 +1,7 @@
-# ================================
+---
+# ========================
 # Interface Configuration
-# ================================
+# ========================
 ip_interfaces:
   - name: edge_network
     interface: ether2
@@ -10,10 +11,9 @@ ip_interfaces:
     interface: ether3
     address: 192.168.40.1/24
 
-
-# ================================
+# ===================
 # DHCP Configuration
-# ================================
+# ===================
 dhcp_servers:
   - name: dhcp_edge
     interface: ether2
@@ -28,5 +28,3 @@ dhcp_servers:
     network: 192.168.40.0/24
     gateway: 192.168.40.1
     dns: 8.8.8.8
-
-

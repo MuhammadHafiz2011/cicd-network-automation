@@ -12,7 +12,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Dependencies
+        run: |
+          pip install --user yamllint
+
       - name: Deploy Configuration
         run: |
           cd ansible
           ansible-playbook playbooks/deploy.yml
+
+      - name: Verify Deployment
+        run: |
+          cd ansible
+          ansible-playbook playbooks/verify.yml

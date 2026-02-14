@@ -1,0 +1,36 @@
+---
+- name: Post Deployment Verification
+  hosts: mikrotik
+  gather_facts: false
+
+  tasks:
+
+    - name: Get IP Address List
+      community.routeros.command:
+        commands:
+          - /ip address print
+      register: ip_output
+
+    - name: Verify Edge Network IP Exists
+      ansible.builtin.assert:
+        that:
+          - "'192.172.17.1/24' in ip_output.stdout"
+        fail_msg: "Edge network IP tidak ditemukan!"
+
+    - name: Verify Cloud Network IP Exists
+      ansible.builtin.assert:
+        that:
+          - "'192.168.40.1/24' in ip_output.stdout"
+        fail_msg: "Cloud network IP tidak ditemukan!"
+
+    - name: Get DHCP Server Status
+      community.routeros.command:
+        commands:
+          - /ip dhcp-server print
+      register: dhcp_output
+
+    - name: Verify DHCP Server Running
+      ansible.builtin.assert:
+        that:
+          - "'running' in dhcp_output.stdout"
+        fail_msg: "DHCP Server tidak running!"

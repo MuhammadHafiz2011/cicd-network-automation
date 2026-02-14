@@ -1,3 +1,4 @@
+---
 - name: Configure IP address on interface
   community.routeros.command:
     commands:
