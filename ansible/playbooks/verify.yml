@@ -1,7 +1,7 @@
 ---
 - name: Post Deployment Verification
   hosts: mikrotik
-  gather_facts: no
+  gather_facts: false
 
   tasks:
 

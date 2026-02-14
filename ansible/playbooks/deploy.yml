@@ -5,7 +5,7 @@
 
 - name: Pre Deployment Validation
   hosts: localhost
-  gather_facts: no
+  gather_facts: false
   vars_files:
     - ../group_vars/mikrotik.yml
 
@@ -29,7 +29,7 @@
 
 - name: Backup and Deploy MikroTik Configuration
   hosts: mikrotik
-  gather_facts: no
+  gather_facts: false
 
   tasks:
 
