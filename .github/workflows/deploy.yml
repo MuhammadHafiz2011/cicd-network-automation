@@ -15,7 +15,6 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install --user yamllint
-          ansible-galaxy collection install community.routeros
 
       - name: Deploy Configuration
         run: |
