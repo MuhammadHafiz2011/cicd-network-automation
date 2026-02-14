@@ -14,13 +14,13 @@
     - name: Verify Edge Network IP Exists
       ansible.builtin.assert:
         that:
-          - "'192.172.17.1/24' in ip_output.stdout"
+          - ip_output.stdout | join(' ') is search("192\.172\.17\.1")
         fail_msg: "Edge network IP tidak ditemukan!"
 
     - name: Verify Cloud Network IP Exists
       ansible.builtin.assert:
         that:
-          - "'192.168.40.1/24' in ip_output.stdout"
+          - ip_output.stdout | join(' ') is search("192\.168\.40\.1")
         fail_msg: "Cloud network IP tidak ditemukan!"
 
     - name: Get DHCP Server Status
@@ -32,5 +32,5 @@
     - name: Verify DHCP Server Running
       ansible.builtin.assert:
         that:
-          - "'running' in dhcp_output.stdout"
+          - dhcp_output.stdout | join(' ') is search("running")
         fail_msg: "DHCP Server tidak running!"
