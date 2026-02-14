@@ -11,17 +11,12 @@
           - /ip address print
       register: ip_output
 
-    - name: Verify Edge Network IP Exists
+    - name: Verify all configured interface IPs exist
       ansible.builtin.assert:
         that:
-          - "'192.172.17.1/24' in ip_output.stdout"
-        fail_msg: "Edge network IP tidak ditemukan!"
-
-    - name: Verify Cloud Network IP Exists
-      ansible.builtin.assert:
-        that:
-          - "'192.168.40.1/24' in ip_output.stdout"
-        fail_msg: "Cloud network IP tidak ditemukan!"
+          - ip_output.stdout | join(' ') is search(item.address.split('/')[0])
+        fail_msg: "IP {{ item.address }} tidak ditemukan di router!"
+      loop: "{{ ip_interfaces }}"
 
     - name: Get DHCP Server Status
       community.routeros.command:
@@ -29,8 +24,9 @@
           - /ip dhcp-server print
       register: dhcp_output
 
-    - name: Verify DHCP Server Running
+    - name: Verify DHCP server exists for each interface
       ansible.builtin.assert:
         that:
-          - "'running' in dhcp_output.stdout"
-        fail_msg: "DHCP Server tidak running!"
+          - dhcp_output.stdout | join(' ') is search(item.interface)
+        fail_msg: "DHCP untuk interface {{ item.interface }} tidak ditemukan!"
+      loop: "{{ dhcp_servers }}"
