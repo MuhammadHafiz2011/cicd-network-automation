@@ -1,3 +1,4 @@
+---
 - name: Ensure DHCP Server Disabled
   community.routeros.command:
     commands:

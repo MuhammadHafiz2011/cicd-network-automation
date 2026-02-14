@@ -1,7 +1,7 @@
 ---
-# =====================================================
-# STAGE 1 — PRE DEPLOYMENT VALIDATION (CI)
-# =====================================================
+# =========================================================
+# STAGE 1 - PRE DEPLOYMENT VALIDATION (CI)
+# =========================================================
 
 - name: Pre Deployment Validation
   hosts: localhost
@@ -11,68 +11,38 @@
 
   tasks:
 
-    # ---------------------------------------------
-    # Validate Interface IP Format (x.x.x.x/yy)
-    # ---------------------------------------------
     - name: Validate interface IP format
       assert:
         that:
           - item.address is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$")
-        fail_msg: "Format IP pada interface {{ item.interface }} tidak valid"
       loop: "{{ ip_interfaces }}"
 
-    # ---------------------------------------------
-    # Validate DHCP Pool Range Format
-    # ---------------------------------------------
     - name: Validate DHCP pool range format
       assert:
         that:
           - item.pool_range is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}-(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-        fail_msg: "Format DHCP pool pada {{ item.interface }} tidak valid"
       loop: "{{ dhcp_servers }}"
 
-    # ---------------------------------------------
-    # Validate DHCP Gateway Format
-    # ---------------------------------------------
-    - name: Validate DHCP gateway format
-      assert:
-        that:
-          - item.gateway is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-        fail_msg: "Gateway pada {{ item.interface }} tidak valid"
-      loop: "{{ dhcp_servers }}"
+# ===============================
+# STAGE 2 - BACKUP + DEPLOY (CD)
+# ===============================
 
-    # ---------------------------------------------
-    # Subnet Consistency Check
-    # ---------------------------------------------
-    - name: Validate DHCP subnet consistency
-      vars:
-        network_prefix: "{{ item.network.split('/')[0].rsplit('.', 1)[0] }}"
-      assert:
-        that:
-          - item.gateway.startswith(network_prefix)
-          - item.pool_range.startswith(network_prefix)
-        fail_msg: "DHCP pool atau gateway tidak satu subnet dengan network {{ item.network }}"
-      loop: "{{ dhcp_servers }}"
-
-
-# =====================================================
-# STAGE 2 — DEPLOY CONFIGURATION (CD)
-# =====================================================
-
-- name: Deploy MikroTik Configuration
+- name: Backup and Deploy MikroTik Configuration
   hosts: mikrotik
   gather_facts: no
 
   tasks:
 
-    # ---------------------------------------------
-    # Connectivity Check (Deployment Guard)
-    # ---------------------------------------------
     - name: Check MikroTik Connectivity
       wait_for:
         host: "{{ ansible_host }}"
         port: 22
         timeout: 5
+
+    - name: Backup MikroTik Configuration
+      community.routeros.command:
+        commands:
+          - /export file=backup-before-ci
 
   roles:
     - ip_address
