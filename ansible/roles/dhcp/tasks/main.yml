@@ -4,21 +4,21 @@
     commands:
       - /ip dhcp-server disable [find interface={{ item.interface }}]
   loop: "{{ dhcp_servers }}"
-  ignore_errors: true
+  failed_when: false
 
 - name: Remove existing IP Pool
   community.routeros.command:
     commands:
       - /ip pool remove [find name={{ item.name }}]
   loop: "{{ dhcp_servers }}"
-  ignore_errors: true
+  failed_when: false
 
 - name: Remove existing DHCP Network
   community.routeros.command:
     commands:
       - /ip dhcp-server network remove [find gateway={{ item.gateway }}]
   loop: "{{ dhcp_servers }}"
-  ignore_errors: true
+  failed_when: false
 
 - name: Create IP Pool
   community.routeros.command:

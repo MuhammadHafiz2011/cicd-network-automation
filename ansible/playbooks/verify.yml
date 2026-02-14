@@ -12,13 +12,13 @@
       register: ip_output
 
     - name: Verify Edge Network IP Exists
-      assert:
+      ansible.builtin.assert:
         that:
           - "'192.172.17.1/24' in ip_output.stdout"
         fail_msg: "Edge network IP tidak ditemukan!"
 
     - name: Verify Cloud Network IP Exists
-      assert:
+      ansible.builtin.assert:
         that:
           - "'192.168.40.1/24' in ip_output.stdout"
         fail_msg: "Cloud network IP tidak ditemukan!"
@@ -30,7 +30,7 @@
       register: dhcp_output
 
     - name: Verify DHCP Server Running
-      assert:
+      ansible.builtin.assert:
         that:
           - "'running' in dhcp_output.stdout"
         fail_msg: "DHCP Server tidak running!"
