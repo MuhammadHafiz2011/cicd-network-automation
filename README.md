@@ -134,3 +134,4 @@ Project ini menunjukkan bahwa konsep CI/CD dapat diterapkan pada konfigurasi jar
 
 
 trigger cd phase 2
+trigger cd phase 2
