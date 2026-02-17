@@ -1,0 +1,77 @@
+---
+- name: Safe Deploy MikroTik Configuration with Auto Rollback
+  hosts: mikrotik
+  gather_facts: false
+
+  vars:
+    backup_name: "backup-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+
+  tasks:
+
+    # =============================
+    # STEP 1 - CREATE BACKUP
+    # =============================
+
+    - name: Create MikroTik configuration backup
+      community.routeros.command:
+        commands:
+          - "/export file={{ backup_name }}"
+      register: backup_result
+
+    - name: Show backup file name
+      ansible.builtin.debug:
+        msg: "Backup created: {{ backup_name }}.rsc"
+
+
+    # =============================
+    # STEP 2 - DEPLOY WITH ROLLBACK PROTECTION
+    # =============================
+
+    - block:
+
+        # Deploy IP address role
+        - name: Deploy IP Address Configuration
+          ansible.builtin.include_role:
+            name: ip_address
+
+
+        # Deploy DHCP role
+        - name: Deploy DHCP Configuration
+          ansible.builtin.include_role:
+            name: dhcp
+
+
+        # Run verification playbook
+        - name: Run post-deployment verification
+          ansible.builtin.import_tasks: verify.yml
+
+
+    # =============================
+    # STEP 3 - ROLLBACK IF FAILED
+    # =============================
+
+      rescue:
+
+        - name: Rollback configuration from backup
+          community.routeros.command:
+            commands:
+              - "/import file={{ backup_name }}.rsc"
+
+        - name: Show rollback message
+          ansible.builtin.debug:
+            msg: "Rollback executed using backup: {{ backup_name }}.rsc"
+
+        - name: Fail deployment after rollback
+          ansible.builtin.fail:
+            msg: "Deployment failed. Configuration restored from backup."
+
+
+    # =============================
+    # STEP 4 - SUCCESS MESSAGE
+    # =============================
+
+      always:
+
+        - name: Deployment completed message
+          ansible.builtin.debug:
+            msg: "Safe deployment process finished."
