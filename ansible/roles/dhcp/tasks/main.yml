@@ -1,36 +1,49 @@
 ---
-- name: Ensure DHCP Server Disabled
+- name: Disable DHCP Server
   community.routeros.command:
     commands:
       - /ip dhcp-server disable [find interface={{ item.interface }}]
   loop: "{{ dhcp_servers }}"
   failed_when: false
 
-- name: Remove existing IP Pool
+
+- name: Create or Update IP Pool
   community.routeros.command:
     commands:
-      - /ip pool remove [find name={{ item.name }}]
+      - /ip pool set [find name={{ item.name }}] ranges={{ item.pool_range }}
   loop: "{{ dhcp_servers }}"
   failed_when: false
 
-- name: Remove existing DHCP Network
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server network remove [find gateway={{ item.gateway }}]
-  loop: "{{ dhcp_servers }}"
-  failed_when: false
 
-- name: Create IP Pool
+- name: Add IP Pool if not exists
   community.routeros.command:
     commands:
       - /ip pool add name={{ item.name }} ranges={{ item.pool_range }}
   loop: "{{ dhcp_servers }}"
+  failed_when: false
 
-- name: Configure DHCP Network
+
+- name: Assign Pool to DHCP Server
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server set [find interface={{ item.interface }}] address-pool={{ item.name }}
+  loop: "{{ dhcp_servers }}"
+
+
+- name: Remove existing DHCP Network
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server network remove [find address={{ item.network }}]
+  loop: "{{ dhcp_servers }}"
+  failed_when: false
+
+
+- name: Create DHCP Network
   community.routeros.command:
     commands:
       - /ip dhcp-server network add address={{ item.network }} gateway={{ item.gateway }} dns-server={{ item.dns }}
   loop: "{{ dhcp_servers }}"
+
 
 - name: Enable DHCP Server
   community.routeros.command:
