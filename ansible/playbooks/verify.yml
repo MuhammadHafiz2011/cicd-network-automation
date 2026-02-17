@@ -11,12 +11,15 @@
           - /ip address print
       register: ip_output
 
+
     - name: Verify all configured interface IPs exist
       ansible.builtin.assert:
         that:
-          - ip_output.stdout | join(' ') is search(item.address.split('/')[0])
-        fail_msg: "IP {{ item.address }} tidak ditemukan di router!"
+          - item.address in ip_output.stdout | join(' ')
+        fail_msg: "IP {{ item.address }} tidak ditemukan!"
+        success_msg: "IP {{ item.address }} ditemukan"
       loop: "{{ ip_interfaces }}"
+
 
     - name: Get DHCP Server Status
       community.routeros.command:
@@ -24,14 +27,11 @@
           - /ip dhcp-server print
       register: dhcp_output
 
+
     - name: Verify DHCP server exists for each interface
       ansible.builtin.assert:
         that:
-          - dhcp_output.stdout | join(' ') is search(item.interface)
-        fail_msg: "DHCP untuk interface {{ item.interface }} tidak ditemukan!"
+          - item.interface in dhcp_output.stdout | join(' ')
+        fail_msg: "DHCP pada interface {{ item.interface }} tidak ditemukan!"
+        success_msg: "DHCP pada interface {{ item.interface }} ditemukan"
       loop: "{{ dhcp_servers }}"
-
-    - name: Simulate rollback test
-      ansible.builtin.assert:
-        that:
-          - false
