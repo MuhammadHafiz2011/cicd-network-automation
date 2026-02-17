@@ -1,3 +1,4 @@
+---
 name: CD Deploy MikroTik
 
 on:
@@ -19,7 +20,7 @@ jobs:
       - name: Deploy Configuration
         run: |
           cd ansible
-          ansible-playbook playbooks/deploy.yml
+          ansible-playbook playbooks/deploy_safe.yml
 
       - name: Verify Deployment
         run: |

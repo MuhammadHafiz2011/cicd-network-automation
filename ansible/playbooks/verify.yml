@@ -30,3 +30,8 @@
           - dhcp_output.stdout | join(' ') is search(item.interface)
         fail_msg: "DHCP untuk interface {{ item.interface }} tidak ditemukan!"
       loop: "{{ dhcp_servers }}"
+
+    - name: Simulate rollback test
+      ansible.builtin.assert:
+        that:
+          - false
