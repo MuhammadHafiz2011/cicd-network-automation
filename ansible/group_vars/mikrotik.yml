@@ -17,14 +17,14 @@ ip_interfaces:
 dhcp_servers:
   - name: dhcp_edge
     interface: ether2
-    pool_range: 192.172.17.5-192.172.17.10
+    pool_range: 192.172.17.2-192.172.17.7
     network: 192.172.17.0/24
     gateway: 192.172.17.1
     dns: 8.8.8.8
 
   - name: dhcp_cloud
     interface: ether3
-    pool_range: 192.168.40.10-192.168.40.100
+    pool_range: 192.168.40.10-192.168.40.11
     network: 192.168.40.0/24
     gateway: 192.168.40.1
     dns: 8.8.8.8
