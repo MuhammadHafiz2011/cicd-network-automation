@@ -1,5 +1,9 @@
 ---
-- name: Safe Deploy MikroTik Configuration with Auto Rollback
+# =========================
+# PLAY 1 - BACKUP AND DEPLOY
+# =========================
+
+- name: Safe Deploy MikroTik Configuration
   hosts: mikrotik
   gather_facts: false
 
@@ -8,70 +12,47 @@
 
   tasks:
 
-    # =============================
-    # STEP 1 - CREATE BACKUP
-    # =============================
-
-    - name: Create MikroTik configuration backup
+    - name: Create MikroTik backup
       community.routeros.command:
         commands:
           - "/export file={{ backup_name }}"
       register: backup_result
 
-    - name: Show backup file name
-      ansible.builtin.debug:
-        msg: "Backup created: {{ backup_name }}.rsc"
-
-
-    # =============================
-    # STEP 2 - DEPLOY WITH ROLLBACK PROTECTION
-    # =============================
 
     - block:
 
-        # Deploy IP address role
-        - name: Deploy IP Address Configuration
+        - name: Deploy IP Address
           ansible.builtin.include_role:
             name: ip_address
 
 
-        # Deploy DHCP role
-        - name: Deploy DHCP Configuration
+        - name: Deploy DHCP
           ansible.builtin.include_role:
             name: dhcp
 
 
-        # Run verification playbook
-        - name: Run post-deployment verification
-          ansible.builtin.import_tasks: verify.yml
+        - name: Run verification playbook
+          ansible.builtin.command:
+            cmd: ansible-playbook playbooks/verify.yml
+          register: verify_result
+          failed_when: verify_result.rc != 0
 
-
-    # =============================
-    # STEP 3 - ROLLBACK IF FAILED
-    # =============================
 
       rescue:
 
-        - name: Rollback configuration from backup
+        - name: Rollback MikroTik config
           community.routeros.command:
             commands:
               - "/import file={{ backup_name }}.rsc"
 
-        - name: Show rollback message
-          ansible.builtin.debug:
-            msg: "Rollback executed using backup: {{ backup_name }}.rsc"
 
-        - name: Fail deployment after rollback
+        - name: Fail after rollback
           ansible.builtin.fail:
-            msg: "Deployment failed. Configuration restored from backup."
+            msg: "Deployment failed and rollback executed."
 
-
-    # =============================
-    # STEP 4 - SUCCESS MESSAGE
-    # =============================
 
       always:
 
-        - name: Deployment completed message
+        - name: Show completion message
           ansible.builtin.debug:
-            msg: "Safe deployment process finished."
+            msg: "Safe deploy finished"
