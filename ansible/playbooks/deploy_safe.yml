@@ -16,17 +16,17 @@
       community.routeros.command:
         commands:
           - "/export file={{ backup_name }}"
-      register: backup_result
 
 
-    - block:
+    - name: Deploy and Verify Configuration
+      block:
 
-        - name: Deploy IP Address
+        - name: Deploy IP Address Role
           ansible.builtin.include_role:
             name: ip_address
 
 
-        - name: Deploy DHCP
+        - name: Deploy DHCP Role
           ansible.builtin.include_role:
             name: dhcp
 
@@ -35,24 +35,25 @@
           ansible.builtin.command:
             cmd: ansible-playbook playbooks/verify.yml
           register: verify_result
+          changed_when: false
           failed_when: verify_result.rc != 0
 
 
       rescue:
 
-        - name: Rollback MikroTik config
+        - name: Rollback MikroTik configuration
           community.routeros.command:
             commands:
               - "/import file={{ backup_name }}.rsc"
 
 
-        - name: Fail after rollback
+        - name: Fail deployment after rollback
           ansible.builtin.fail:
-            msg: "Deployment failed and rollback executed."
+            msg: "Deployment failed. Rollback executed."
 
 
       always:
 
-        - name: Show completion message
+        - name: Show deployment completion message
           ansible.builtin.debug:
-            msg: "Safe deploy finished"
+            msg: "Safe deployment process finished"
