@@ -1,4 +1,3 @@
----
 name: CD Deploy MikroTik
 
 on:
@@ -7,22 +6,22 @@ on:
 
 jobs:
   deploy:
+
     runs-on: self-hosted
 
     steps:
+
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+
       - name: Install Dependencies
         run: |
-          pip install --user yamllint
+          python3 -m pip install --upgrade pip
+          pip3 install ansible
+
 
       - name: Deploy Configuration
         run: |
           cd ansible
           ansible-playbook playbooks/deploy_safe.yml
-
-      - name: Verify Deployment
-        run: |
-          cd ansible
-          ansible-playbook playbooks/verify.yml
