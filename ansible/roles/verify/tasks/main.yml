@@ -10,12 +10,12 @@
 - name: Verify IP exists
   ansible.builtin.assert:
     that:
-      - item.address in ip_output.stdout[0]
+      - item.address in (ip_output.stdout_lines | join(' '))
     fail_msg: "IP {{ item.address }} not found"
   loop: "{{ ip_interfaces }}"
 
 
-- name: Get DHCP list
+- name: Get DHCP server list
   community.routeros.command:
     commands:
       - /ip dhcp-server print
@@ -25,6 +25,6 @@
 - name: Verify DHCP exists
   ansible.builtin.assert:
     that:
-      - item.interface in dhcp_output.stdout[0]
+      - item.interface in (dhcp_output.stdout_lines | join(' '))
     fail_msg: "DHCP {{ item.interface }} not found"
   loop: "{{ dhcp_servers }}"
