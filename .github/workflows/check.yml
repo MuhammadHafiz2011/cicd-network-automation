@@ -1,4 +1,3 @@
----
 name: CI Validation
 
 on:
@@ -6,38 +5,57 @@ on:
     branches: [ main ]
 
 jobs:
+
   validate:
+
     runs-on: self-hosted
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install ansible ansible-lint yamllint
+    - uses: actions/checkout@v3
 
-      - name: YAML Lint
-        run: |
-          yamllint ansible/
 
-      - name: Ansible Lint
-        run: |
-          cd ansible
-          ansible-lint playbooks/ roles/
+    - name: Install Dependencies
+      run: |
 
-      - name: Inventory Validation
-        run: |
-          cd ansible
-          ansible-inventory -i inventory.ini --list
+        python3 -m pip install --upgrade pip
 
-      - name: Syntax Check
-        run: |
-          cd ansible
-          ansible-playbook playbooks/deploy.yml --syntax-check
+        pip3 install ansible ansible-lint yamllint
 
-      - name: Dry Run Simulation
-        run: |
-          cd ansible
-          ansible-playbook playbooks/deploy.yml --check --diff
+        ansible-galaxy collection install community.routeros
+
+
+    - name: YAML Lint
+      run: yamllint ansible/
+
+
+    - name: Ansible Lint
+      run: |
+
+        cd ansible
+
+        ansible-lint .
+
+
+    - name: Inventory Validation
+      run: |
+
+        cd ansible
+
+        ansible-inventory -i inventory.ini --list
+
+
+    - name: Syntax Check
+      run: |
+
+        cd ansible
+
+        ansible-playbook playbooks/deploy.yml --syntax-check
+
+
+    - name: Dry Run Simulation
+      run: |
+
+        cd ansible
+
+        ansible-playbook playbooks/deploy.yml --check --diff

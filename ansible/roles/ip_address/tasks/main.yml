@@ -1,6 +1,48 @@
 ---
-- name: Configure IP address on interface
+# ===========
+# VALIDATION
+# ===========
+
+- name: Validate IP format
+
+  ansible.builtin.assert:
+
+    that:
+
+      - item.address is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$")
+
+    fail_msg: "Invalid IP format: {{ item.address }}"
+
+  loop: "{{ ip_interfaces }}"
+
+
+# ==============
+# REMOVE OLD IP
+# ==============
+
+- name: Remove existing IP
+
   community.routeros.command:
+
     commands:
-      - /ip address set [find interface={{ item.interface }}] address={{ item.address }}
+
+      - /ip address remove [find interface={{ item.interface }}]
+
+  loop: "{{ ip_interfaces }}"
+
+  ignore_errors: true
+
+
+# ===========
+# ADD NEW IP
+# ===========
+
+- name: Add IP address
+
+  community.routeros.command:
+
+    commands:
+
+      - /ip address add address={{ item.address }} interface={{ item.interface }}
+
   loop: "{{ ip_interfaces }}"

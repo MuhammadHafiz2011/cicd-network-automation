@@ -1,52 +1,113 @@
 ---
-- name: Disable DHCP Server
+# ===========
+# VALIDATION
+# ===========
+
+- name: Validate DHCP pool format
+
+  ansible.builtin.assert:
+
+    that:
+
+      - item.pool_range is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}-(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+
+    fail_msg: "Invalid DHCP pool range: {{ item.pool_range }}"
+
+  loop: "{{ dhcp_servers }}"
+
+
+# =============
+# DISABLE DHCP
+# =============
+
+- name: Disable DHCP server
+
   community.routeros.command:
+
     commands:
+
       - /ip dhcp-server disable [find interface={{ item.interface }}]
+
   loop: "{{ dhcp_servers }}"
-  failed_when: false
+
+  ignore_errors: true
 
 
-- name: Create or Update IP Pool
+# ============
+# REMOVE POOL
+# ============
+
+- name: Remove old pool
+
   community.routeros.command:
+
     commands:
-      - /ip pool set [find name={{ item.name }}] ranges={{ item.pool_range }}
+
+      - /ip pool remove [find name={{ item.name }}]
+
   loop: "{{ dhcp_servers }}"
-  failed_when: false
+
+  ignore_errors: true
 
 
-- name: Add IP Pool if not exists
+# ================
+# CREATE NEW POOL
+# ================
+
+- name: Create new pool
+
   community.routeros.command:
+
     commands:
+
       - /ip pool add name={{ item.name }} ranges={{ item.pool_range }}
-  loop: "{{ dhcp_servers }}"
-  failed_when: false
 
-
-- name: Assign Pool to DHCP Server
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server set [find interface={{ item.interface }}] address-pool={{ item.name }}
   loop: "{{ dhcp_servers }}"
 
 
-- name: Remove existing DHCP Network
+# ===============
+# REMOVE NETWORK
+# ===============
+
+- name: Remove old DHCP network
+
   community.routeros.command:
+
     commands:
-      - /ip dhcp-server network remove [find address={{ item.network }}]
+
+      - /ip dhcp-server network remove [find gateway={{ item.gateway }}]
+
   loop: "{{ dhcp_servers }}"
-  failed_when: false
+
+  ignore_errors: true
 
 
-- name: Create DHCP Network
+# ===============
+# CREATE NETWORK
+# ===============
+
+- name: Create DHCP network
+
   community.routeros.command:
+
     commands:
+
       - /ip dhcp-server network add address={{ item.network }} gateway={{ item.gateway }} dns-server={{ item.dns }}
+
   loop: "{{ dhcp_servers }}"
 
 
-- name: Enable DHCP Server
+# ============
+# ENABLE DHCP
+# ============
+
+- name: Enable DHCP server
+
   community.routeros.command:
+
     commands:
+
       - /ip dhcp-server enable [find interface={{ item.interface }}]
+
   loop: "{{ dhcp_servers }}"
+
