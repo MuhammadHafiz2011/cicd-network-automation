@@ -26,7 +26,8 @@
             name: dhcp
 
         - name: Run verification
-          ansible.builtin.import_playbook: verify.yml
+          ansible.builtin.include_role:
+            name: verify
 
 
       rescue:
