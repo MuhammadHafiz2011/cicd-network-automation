@@ -1,45 +1,48 @@
 ---
+
 - name: Safe Deploy MikroTik Configuration
   hosts: mikrotik
   gather_facts: false
 
   vars:
-    backup_name: "backup-{{ lookup('pipe','date +%Y%m%d-%H%M%S') }}"
+    backup_name: "backup-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
 
   tasks:
 
-  - name: Create backup
-    community.routeros.command:
-      commands:
-        - /export file={{ backup_name }}
+    - name: Create backup
+      community.routeros.command:
+        commands:
+          - /export file={{ backup_name }}
 
-  - name: Deploy Configuration
-    block:
+    - name: Deploy configuration
+      block:
 
-      - name: Deploy IP Address
-        ansible.builtin.include_role:
-          name: ip_address
+        - name: Deploy IP Address
+          ansible.builtin.include_role:
+            name: ip_address
 
-      - name: Deploy DHCP
-        ansible.builtin.include_role:
-          name: dhcp
+        - name: Deploy DHCP
+          ansible.builtin.include_role:
+            name: dhcp
 
-      - name: Run verification
-        ansible.builtin.import_playbook: verify.yml
+        - name: Run verification
+          ansible.builtin.import_playbook: verify.yml
 
-    rescue:
 
-      - name: Rollback configuration
-        community.routeros.command:
-          commands:
-            - /import file={{ backup_name }}.rsc
+      rescue:
 
-      - name: Fail deployment
-        ansible.builtin.fail:
-          msg: "Deployment failed, rollback executed"
+        - name: Rollback configuration
+          community.routeros.command:
+            commands:
+              - /import file={{ backup_name }}.rsc
 
-    always:
+        - name: Fail deployment
+          ansible.builtin.fail:
+            msg: "Deployment failed, rollback executed"
 
-      - name: Show completion message
-        ansible.builtin.debug:
-          msg: "Safe deployment finished"
+
+      always:
+
+        - name: Show completion message
+          ansible.builtin.debug:
+            msg: "Safe deployment finished"
