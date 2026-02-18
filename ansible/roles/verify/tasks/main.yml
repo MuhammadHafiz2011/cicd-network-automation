@@ -1,0 +1,34 @@
+---
+
+- name: Get IP address list
+  community.routeros.command:
+    commands:
+      - /ip address print
+  register: ip_output
+  when: not ansible_check_mode
+
+
+- name: Verify IP exists
+  ansible.builtin.assert:
+    that:
+      - item.address in (ip_output.stdout | join(' '))
+    fail_msg: "IP {{ item.address }} not found"
+  loop: "{{ ip_interfaces }}"
+  when: not ansible_check_mode
+
+
+- name: Get DHCP server list
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server print
+  register: dhcp_output
+  when: not ansible_check_mode
+
+
+- name: Verify DHCP exists
+  ansible.builtin.assert:
+    that:
+      - item.interface in (dhcp_output.stdout | join(' '))
+    fail_msg: "DHCP {{ item.interface }} not found"
+  loop: "{{ dhcp_servers }}"
+  when: not ansible_check_mode
