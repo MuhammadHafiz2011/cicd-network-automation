@@ -1,26 +1,22 @@
-ip_interfaces:
+---
 
+ip_interfaces:
   - name: edge_network
     interface: ether2
     address: 192.172.17.1/24
-
 
   - name: cloud_network
     interface: ether3
     address: 192.168.40.1/24
 
 
-
-
 dhcp_servers:
-
   - name: dhcp_edge
     interface: ether2
     pool_range: 192.172.17.5-192.172.17.10
     network: 192.172.17.0/24
     gateway: 192.172.17.1
     dns: 8.8.8.8
-
 
   - name: dhcp_cloud
     interface: ether3

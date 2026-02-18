@@ -13,8 +13,6 @@
       commands:
         - /export file={{ backup_name }}
 
-
-
   - name: Deploy Configuration
     block:
 
@@ -22,18 +20,12 @@
         ansible.builtin.include_role:
           name: ip_address
 
-
-
       - name: Deploy DHCP
         ansible.builtin.include_role:
           name: dhcp
 
-
-
       - name: Run verification
         ansible.builtin.import_playbook: verify.yml
-
-
 
     rescue:
 
@@ -42,13 +34,9 @@
           commands:
             - /import file={{ backup_name }}.rsc
 
-
-
       - name: Fail deployment
         ansible.builtin.fail:
           msg: "Deployment failed, rollback executed"
-
-
 
     always:
 

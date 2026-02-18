@@ -18,15 +18,11 @@
       fail_msg: "IP {{ item.address }} not found"
     loop: "{{ ip_interfaces }}"
 
-
-
   - name: Get DHCP server list
     community.routeros.command:
       commands:
         - /ip dhcp-server print
     register: dhcp_output
-
-
 
   - name: Verify DHCP exists
     ansible.builtin.assert:
