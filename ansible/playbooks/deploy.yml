@@ -30,20 +30,14 @@
             name: verify
 
 
-      rescue:
+  rescue:
 
-        - name: Rollback configuration
-          community.routeros.command:
-            commands:
-              - /import file={{ backup_name }}.rsc
+     - name: Rollback configuration
+       community.routeros.command:
+          commands:
+            - /import file={{ backup_name }}.rsc
 
-        - name: Fail deployment
-          ansible.builtin.fail:
-            msg: "Deployment failed, rollback executed"
-
-
-      always:
-
-        - name: Show completion message
-          ansible.builtin.debug:
-            msg: "Safe deployment finished"
+     - name: Fail deployment
+       ansible.builtin.fail:
+         msg: "Deployment failed, rollback executed"
+       when: not ansible_check_mode
