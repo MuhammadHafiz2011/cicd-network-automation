@@ -4,17 +4,21 @@
   ansible.builtin.assert:
     that:
       - item.pool_range is match("^(?:[0-9]{1,3}\.){3}[0-9]{1,3}-(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
-    fail_msg: "Invalid DHCP pool range: {{ item.pool_range }}"
   loop: "{{ dhcp_servers }}"
-
 
 - name: Disable DHCP server
   community.routeros.command:
     commands:
-      - /ip dhcp-server disable [find interface={{ item.interface }}]
+      - /ip dhcp-server disable [find name={{ item.name }}]
   loop: "{{ dhcp_servers }}"
   ignore_errors: true
 
+- name: Remove DHCP server
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server remove [find name={{ item.name }}]
+  loop: "{{ dhcp_servers }}"
+  ignore_errors: true
 
 - name: Remove old pool
   community.routeros.command:
@@ -23,31 +27,28 @@
   loop: "{{ dhcp_servers }}"
   ignore_errors: true
 
-
-- name: Create new pool
+- name: Create pool
   community.routeros.command:
     commands:
       - /ip pool add name={{ item.name }} ranges={{ item.pool_range }}
   loop: "{{ dhcp_servers }}"
 
+- name: Create DHCP server
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server add name={{ item.name }} interface={{ item.interface }} address-pool={{ item.name }} disabled=no
+  loop: "{{ dhcp_servers }}"
+  ignore_errors: true
 
-- name: Remove old DHCP network
+- name: Remove network
   community.routeros.command:
     commands:
       - /ip dhcp-server network remove [find gateway={{ item.gateway }}]
   loop: "{{ dhcp_servers }}"
   ignore_errors: true
 
-
-- name: Create DHCP network
+- name: Create network
   community.routeros.command:
     commands:
       - /ip dhcp-server network add address={{ item.network }} gateway={{ item.gateway }} dns-server={{ item.dns }}
-  loop: "{{ dhcp_servers }}"
-
-
-- name: Enable DHCP server
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server enable [find interface={{ item.interface }}]
   loop: "{{ dhcp_servers }}"
