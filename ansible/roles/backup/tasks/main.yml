@@ -1,0 +1,44 @@
+---
+
+- name: Create timestamp
+  set_fact:
+    backup_time: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+
+
+- name: Set backup filename
+  set_fact:
+    backup_name: "{{ inventory_hostname }}-{{ backup_time }}"
+
+
+- name: Export config
+  community.routeros.command:
+    commands:
+      - /export file={{ backup_name }}
+
+
+- name: Create binary backup
+  community.routeros.command:
+    commands:
+      - /system backup save name={{ backup_name }}
+
+
+- name: Wait for file creation
+  pause:
+    seconds: 5
+
+
+- name: Download export file
+  ansible.netcommon.net_get:
+    src: "{{ backup_name }}.rsc"
+    dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.rsc"
+
+
+- name: Download binary backup
+  ansible.netcommon.net_get:
+    src: "{{ backup_name }}.backup"
+    dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
+
+
+- name: Backup completed
+  debug:
+    msg: "Backup saved: {{ backup_name }}"

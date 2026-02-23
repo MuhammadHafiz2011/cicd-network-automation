@@ -1,0 +1,28 @@
+mikrotik_interfaces:
+
+  - interface: ether2
+    ip_address: 192.200.11.1/24
+
+  - interface: ether3
+    ip_address: 177.177.77.1/24
+
+
+
+mikrotik_dhcp:
+
+  - interface: ether2
+    dhcp_name: dhcp_edge
+    dhcp_pool: dhcp_pool_edge
+    dhcp_range: 192.200.11.10-192.200.11.13
+    dhcp_network: 192.200.11.0/24
+    dhcp_gateway: 192.200.11.1
+    dns_server: 8.8.8.8
+
+
+  - interface: ether3
+    dhcp_name: dhcp_cloud
+    dhcp_pool: dhcp_pool_cloud
+    dhcp_range: 177.177.77.10-177.177.77.43
+    dhcp_network: 177.177.77.0/24
+    dhcp_gateway: 177.177.77.1
+    dns_server: 8.8.8.8

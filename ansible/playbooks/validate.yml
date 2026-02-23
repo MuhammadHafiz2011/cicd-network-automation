@@ -1,0 +1,11 @@
+---
+
+- name: Validate MikroTik Configuration
+
+  hosts: mikrotik
+
+  gather_facts: no
+
+  roles:
+
+    - validate

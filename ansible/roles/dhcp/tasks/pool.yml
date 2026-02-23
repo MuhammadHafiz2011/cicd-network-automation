@@ -1,0 +1,23 @@
+---
+
+- name: Get current DHCP pools
+  community.routeros.command:
+    commands:
+      - /ip pool print detail
+  register: current_pool
+
+
+- name: Remove old DHCP pool if different
+  community.routeros.command:
+    commands:
+      - /ip pool remove [find name="{{ item.dhcp_pool }}"]
+  when: item.dhcp_range not in current_pool.stdout[0]
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Add DHCP pool
+  community.routeros.command:
+    commands:
+      - /ip pool add name="{{ item.dhcp_pool }}" ranges="{{ item.dhcp_range }}"
+  when: item.dhcp_range not in current_pool.stdout[0]
+  loop: "{{ mikrotik_dhcp }}"
