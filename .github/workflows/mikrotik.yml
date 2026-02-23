@@ -3,8 +3,11 @@ name: MikroTik CI/CD Pipeline
 on:
   push:
     branches:
-      - main
+      - '**'
 
+  pull_request:
+    branches:
+      - '**'
 jobs:
 
   deploy:
