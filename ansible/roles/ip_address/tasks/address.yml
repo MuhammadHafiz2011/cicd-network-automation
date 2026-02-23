@@ -1,0 +1,23 @@
+---
+
+- name: Get current IP
+  community.routeros.command:
+    commands:
+      - /ip address print detail
+  register: current_ip
+
+
+- name: Remove old IP if different
+  community.routeros.command:
+    commands:
+      - /ip address remove [find interface="{{ item.interface }}"]
+  when: item.ip_address not in current_ip.stdout[0]
+  loop: "{{ mikrotik_interfaces }}"
+
+
+- name: Add new IP
+  community.routeros.command:
+    commands:
+      - /ip address add address={{ item.ip_address }} interface={{ item.interface }}
+  when: item.ip_address not in current_ip.stdout[0]
+  loop: "{{ mikrotik_interfaces }}"

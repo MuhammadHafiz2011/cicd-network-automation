@@ -1,0 +1,38 @@
+---
+
+- name: Validate IP address format
+  assert:
+    that:
+      - item.ip_address | ansible.utils.ipaddr
+    fail_msg: "Invalid IP address: {{ item.ip_address }}"
+  loop: "{{ mikrotik_interfaces }}"
+
+
+- name: Validate DHCP network
+  assert:
+    that:
+      - item.dhcp_network | ansible.utils.ipaddr
+    fail_msg: "Invalid DHCP network: {{ item.dhcp_network }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Validate DHCP gateway
+  assert:
+    that:
+      - item.dhcp_gateway | ansible.utils.ipaddr
+    fail_msg: "Invalid DHCP gateway: {{ item.dhcp_gateway }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Validate DHCP range start
+  assert:
+    that:
+      - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr
+      - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr
+    fail_msg: "Invalid DHCP range: {{ item.dhcp_range }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Validation success
+  debug:
+    msg: "All configuration valid"

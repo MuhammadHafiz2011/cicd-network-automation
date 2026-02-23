@@ -1,53 +1,11 @@
 ---
 
-- name: Safe Deploy MikroTik Configuration
+- name: Deploy MikroTik Configuration
   hosts: mikrotik
-  gather_facts: false
+  gather_facts: no
 
-  vars:
-    backup_name: "backup-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+  roles:
 
-  tasks:
+    - ip_address
 
-    - name: Create backup
-      community.routeros.command:
-        commands:
-          - /export file={{ backup_name }}
-      when: not ansible_check_mode
-
-
-    - name: Deploy configuration
-      block:
-
-        - name: Deploy IP Address
-          ansible.builtin.include_role:
-            name: ip_address
-
-        - name: Deploy DHCP
-          ansible.builtin.include_role:
-            name: dhcp
-
-        - name: Run verification
-          ansible.builtin.include_role:
-            name: verify
-
-
-      rescue:
-
-        - name: Rollback configuration
-          community.routeros.command:
-            commands:
-              - /import file={{ backup_name }}.rsc
-          when: not ansible_check_mode
-
-
-        - name: Fail deployment
-          ansible.builtin.fail:
-            msg: "Deployment failed, rollback executed"
-
-
-      always:
-
-        - name: Show completion message
-          ansible.builtin.debug:
-            msg: "Safe deployment finished"
+    - dhcp

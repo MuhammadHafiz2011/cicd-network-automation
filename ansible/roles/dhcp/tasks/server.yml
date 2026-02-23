@@ -1,0 +1,34 @@
+---
+
+- name: Get current DHCP servers
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server print detail
+  register: current_dhcp
+
+
+- name: Remove DHCP server if config different
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server remove [find name="{{ item.dhcp_name }}"]
+  when: >
+    item.dhcp_name in current_dhcp.stdout[0]
+    and (
+      item.dhcp_pool not in current_dhcp.stdout[0]
+      or item.interface not in current_dhcp.stdout[0]
+    )
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Add DHCP server
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server add \
+        name="{{ item.dhcp_name }}" \
+        interface="{{ item.interface }}" \
+        address-pool="{{ item.dhcp_pool }}" \
+        disabled=no
+  when: >
+    item.dhcp_name not in current_dhcp.stdout[0]
+    or item.dhcp_pool not in current_dhcp.stdout[0]
+  loop: "{{ mikrotik_dhcp }}"

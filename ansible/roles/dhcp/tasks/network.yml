@@ -1,0 +1,36 @@
+---
+
+- name: GET ALL DHCP NETWORK
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server network print detail
+  register: dhcp_network_all
+
+
+- name: SET existing DHCP network list
+  set_fact:
+    existing_networks: >-
+      {{
+        dhcp_network_all.stdout[0]
+        | regex_findall('address=([0-9./]+)')
+      }}
+
+
+- name: REMOVE OLD DHCP network
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server network remove [find address="{{ item }}"]
+  loop: "{{ existing_networks }}"
+  when: item not in (mikrotik_dhcp | map(attribute='dhcp_network') | list)
+
+
+- name: CREATE DHCP network
+  community.routeros.command:
+    commands:
+      - >
+        /ip dhcp-server network add
+        address="{{ item.dhcp_network }}"
+        gateway="{{ item.dhcp_gateway }}"
+        dns-server="{{ item.dns_server }}"
+  loop: "{{ mikrotik_dhcp }}"
+  when: item.dhcp_network not in existing_networks

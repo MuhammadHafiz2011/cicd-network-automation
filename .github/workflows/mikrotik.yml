@@ -1,0 +1,52 @@
+name: MikroTik CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  deploy:
+
+    runs-on: self-hosted
+
+    defaults:
+      run:
+        working-directory: ansible
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Validate Configuration
+        run: ansible-playbook playbooks/validate.yml
+
+      - name: Backup Configuration
+        run: ansible-playbook playbooks/backup.yml
+
+      - name: Deploy Configuration
+        run: ansible-playbook playbooks/deploy.yml
+
+      - name: Verify Configuration
+        run: ansible-playbook playbooks/verify.yml
+
+
+  rollback:
+
+    runs-on: self-hosted
+
+    if: failure()
+
+    defaults:
+      run:
+        working-directory: ansible
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Rollback Configuration
+        run: ansible-playbook playbooks/rollback.yml

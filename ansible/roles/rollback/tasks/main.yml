@@ -1,0 +1,35 @@
+---
+
+- name: Set backup dir
+  set_fact:
+    backup_dir: "{{ playbook_dir }}/../backups"
+
+
+- name: Find backup
+  delegate_to: localhost
+  connection: local
+  shell: ls -t {{ backup_dir }}/*.backup | head -n 1
+  register: backup_file
+
+
+- name: Upload backup via SCP
+  delegate_to: localhost
+  connection: local
+  shell: |
+    sshpass -p '{{ ansible_password }}' \
+    scp -o StrictHostKeyChecking=no \
+    {{ backup_file.stdout }} \
+    {{ ansible_user }}@{{ ansible_host }}:{{ backup_file.stdout | basename }}
+
+
+- name: Restore MikroTik via SSH
+  delegate_to: localhost
+  connection: local
+  shell: |
+    sshpass -p '{{ ansible_password }}' ssh -o StrictHostKeyChecking=no \
+    {{ ansible_user }}@{{ ansible_host }} \
+    "/system backup load name={{ backup_file.stdout | basename }} password={{ ansible_password }}"
+
+
+- pause:
+    seconds: 90
