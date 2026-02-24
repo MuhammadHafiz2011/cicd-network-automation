@@ -1,22 +1,27 @@
 ---
 
-- name: Validate IP address format
+
+- name: Validate interface IP format (must use CIDR)
   assert:
     that:
+      - item.ip_address is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$")
       - item.ip_address | ansible.utils.ipaddr
-    fail_msg: "Invalid IP address: {{ item.ip_address }}"
+    fail_msg: "Invalid interface IP: {{ item.ip_address }}"
   loop: "{{ mikrotik_interfaces }}"
 
 
-- name: Validate DHCP network
+
+- name: Validate DHCP network format
   assert:
     that:
+      - item.dhcp_network is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$")
       - item.dhcp_network | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP network: {{ item.dhcp_network }}"
   loop: "{{ mikrotik_dhcp }}"
 
 
-- name: Validate DHCP gateway
+
+- name: Validate DHCP gateway format
   assert:
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr
@@ -24,15 +29,46 @@
   loop: "{{ mikrotik_dhcp }}"
 
 
-- name: Validate DHCP range start
+
+- name: Validate DNS server format
   assert:
     that:
+      - item.dns_server | ansible.utils.ipaddr
+    fail_msg: "Invalid DNS server: {{ item.dns_server }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+
+- name: Validate DHCP range format
+  assert:
+    that:
+      - item.dhcp_range is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$")
       - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr
       - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP range: {{ item.dhcp_range }}"
   loop: "{{ mikrotik_dhcp }}"
 
 
+
+- name: Validate gateway inside DHCP network
+  assert:
+    that:
+      - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
+    fail_msg: "Gateway {{ item.dhcp_gateway }} not inside {{ item.dhcp_network }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+
+- name: Validate DHCP range inside network
+  assert:
+    that:
+      - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr(item.dhcp_network)
+      - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr(item.dhcp_network)
+    fail_msg: "DHCP range {{ item.dhcp_range }} not inside {{ item.dhcp_network }}"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+
 - name: Validation success
   debug:
-    msg: "All configuration valid"
+    msg: "All configuration valid and safe to deploy"

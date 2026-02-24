@@ -4,10 +4,17 @@
   set_fact:
     backup_time: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
 
-
 - name: Set backup filename
   set_fact:
     backup_name: "{{ inventory_hostname }}-{{ backup_time }}"
+
+
+- name: Ensure backup directory exists
+  delegate_to: localhost
+  file:
+    path: "{{ playbook_dir }}/../backups"
+    state: directory
+    mode: '0755'
 
 
 - name: Export config
@@ -15,12 +22,10 @@
     commands:
       - /export file={{ backup_name }}
 
-
 - name: Create binary backup
   community.routeros.command:
     commands:
       - /system backup save name={{ backup_name }}
-
 
 - name: Wait for file creation
   pause:
