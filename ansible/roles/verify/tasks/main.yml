@@ -1,38 +1,84 @@
 ---
 
-- name: Verify IP
+- name: Verify IP address exact
+  assert:
+    that:
+      - ip.stdout_lines | select('search', 'address={{ item.ip_address }}') | list | length > 0
+    fail_msg: >
+      [VERIFY STAGE FAILURE]
+      Expected IP {{ item.ip_address }} not found on interface {{ item.interface }}.
+      Device configuration does not match declared pipeline configuration.
+      Triggering rollback mechanism.
+    success_msg: "[VERIFY SUCCESS] IP {{ item.ip_address }} verified on interface {{ item.interface }}."
+  loop: "{{ mikrotik_interfaces }}"
+
+
+- name: Verify DHCP server exact
+  assert:
+    that:
+      - dhcp.stdout_lines | select('search', 'name={{ item.dhcp_name }}') | list | length > 0
+    fail_msg: >
+      [VERIFY STAGE FAILURE]
+      DHCP Server '{{ item.dhcp_name }}' is missing or misconfigured.
+      Deployment result inconsistent with expected state.
+      Triggering rollback mechanism.
+    success_msg: "[VERIFY SUCCESS] DHCP Server '{{ item.dhcp_name }}' verified."
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Verify DHCP network exact
+  assert:
+    that:
+      - network.stdout_lines | select('search', 'address={{ item.dhcp_network }}') | list | length > 0
+    fail_msg: >
+      [VERIFY STAGE FAILURE]
+      Expected DHCP network {{ item.dhcp_network }} not found on device.
+      Network definition mismatch detected.
+      Triggering rollback mechanism.
+    success_msg: "[VERIFY SUCCESS] DHCP Network {{ item.dhcp_network }} verified."
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Verify DHCP pool exact
+  assert:
+    that:
+      - pool.stdout_lines | select('search', 'name={{ item.dhcp_pool }}') | list | length > 0
+    fail_msg: >
+      [VERIFY STAGE FAILURE]
+      DHCP Pool '{{ item.dhcp_pool }}' not detected.
+      IP allocation configuration mismatch.
+      Triggering rollback mechanism.
+    success_msg: "[VERIFY SUCCESS] DHCP Pool '{{ item.dhcp_pool }}' verified."
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Verify DHCP range exact
+  assert:
+    that:
+      - pool.stdout_lines | select('search', 'ranges={{ item.dhcp_range }}') | list | length > 0
+    fail_msg: >
+      [VERIFY STAGE FAILURE]
+      Expected DHCP range {{ item.dhcp_range }} not found in pool configuration.
+      IP allocation range inconsistent with declared configuration.
+      Triggering rollback mechanism.
+    success_msg: "[VERIFY SUCCESS] DHCP Range {{ item.dhcp_range }} verified."
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Verify connectivity to Cloud
   community.routeros.command:
     commands:
-      - /ip address print
-  register: ip
+      - /ping {{ cloud_ip }} count=3
+  register: ping_result
+  changed_when: false
 
-
-- debug:
-    var: ip.stdout_lines
-
-
-- name: Verify DHCP
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server print
-  register: dhcp
-
-
-- debug:
-    var: dhcp.stdout_lines
-
-
-- name: Verify DHCP Network
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server network print
-  register: network
-
-
-- debug:
-    var: network.stdout_lines
-
-
-- name: Verification done
-  debug:
-    msg: SUCCESS
+- name: Fail if ping to Cloud failed
+  assert:
+    that:
+      - "'packet-loss=100%' not in ping_result.stdout[0]"
+    fail_msg: >
+      [SERVICE CONTINUITY FAILURE]
+      Cloud {{ cloud_ip }} is unreachable from MikroTik gateway.
+      Edge-to-cloud communication disrupted.
+      Triggering automatic rollback.
+    success_msg: "[VERIFY SUCCESS] Cloud {{ cloud_ip }} reachable from MikroTik gateway."

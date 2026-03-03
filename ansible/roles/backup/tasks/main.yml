@@ -17,11 +17,6 @@
     mode: '0755'
 
 
-- name: Export config
-  community.routeros.command:
-    commands:
-      - /export file={{ backup_name }}
-
 - name: Create binary backup
   community.routeros.command:
     commands:
@@ -32,12 +27,6 @@
     seconds: 5
 
 
-- name: Download export file
-  ansible.netcommon.net_get:
-    src: "{{ backup_name }}.rsc"
-    dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.rsc"
-
-
 - name: Download binary backup
   ansible.netcommon.net_get:
     src: "{{ backup_name }}.backup"
@@ -46,4 +35,4 @@
 
 - name: Backup completed
   debug:
-    msg: "Backup saved: {{ backup_name }}"
+  msg: "[BACKUP SUCCESS] Binary snapshot saved as {{ backup_name }}.backup"

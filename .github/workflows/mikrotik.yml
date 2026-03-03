@@ -3,15 +3,12 @@ name: MikroTik CI/CD Pipeline
 on:
   push:
     branches:
-      - '**'
+      - main
 
-  pull_request:
-    branches:
-      - '**'
 jobs:
 
   deploy:
-
+    name: Deploy Configuration
     runs-on: self-hosted
 
     defaults:
@@ -19,7 +16,6 @@ jobs:
         working-directory: ansible
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v3
 
@@ -35,11 +31,10 @@ jobs:
       - name: Verify Configuration
         run: ansible-playbook playbooks/verify.yml
 
-
   rollback:
-
+    name: Rollback Configuration
     runs-on: self-hosted
-
+    needs: deploy
     if: failure()
 
     defaults:
@@ -47,9 +42,8 @@ jobs:
         working-directory: ansible
 
     steps:
-
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Rollback Configuration
+      - name: Rollback to Last Backup
         run: ansible-playbook playbooks/rollback.yml

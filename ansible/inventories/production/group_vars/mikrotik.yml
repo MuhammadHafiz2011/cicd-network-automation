@@ -8,3 +8,5 @@ ansible_password: admin
 
 ansible_port: 22
 
+
+cloud_ip: 10.10.10.4

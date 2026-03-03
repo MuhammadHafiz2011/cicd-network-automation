@@ -1,35 +1,43 @@
 ---
 
-- name: Set backup dir
+- name: Set backup directory
   set_fact:
     backup_dir: "{{ playbook_dir }}/../backups"
 
-
-- name: Find backup
+- name: Get latest binary backup file
   delegate_to: localhost
   connection: local
-  shell: ls -t {{ backup_dir }}/*.backup | head -n 1
+  shell: ls -t {{ backup_dir }}/*.backup 2>/dev/null | head -n 1
   register: backup_file
 
+- name: Ensure backup file exists
+  assert:
+    that:
+      - backup_file.stdout != ""
+    fail_msg: "[ROLLBACK FAILURE] No backup file found. Rollback aborted."
 
-- name: Upload backup via SCP
+- name: Upload backup file to MikroTik
   delegate_to: localhost
   connection: local
-  shell: |
-    sshpass -p '{{ ansible_password }}' \
-    scp -o StrictHostKeyChecking=no \
-    {{ backup_file.stdout }} \
+  shell: >
+    sshpass -p "{{ ansible_password }}"
+    scp -o StrictHostKeyChecking=no
+    {{ backup_file.stdout }}
     {{ ansible_user }}@{{ ansible_host }}:{{ backup_file.stdout | basename }}
 
-
-- name: Restore MikroTik via SSH
+- name: Restore MikroTik configuration
   delegate_to: localhost
   connection: local
-  shell: |
-    sshpass -p '{{ ansible_password }}' ssh -o StrictHostKeyChecking=no \
-    {{ ansible_user }}@{{ ansible_host }} \
-    "/system backup load name={{ backup_file.stdout | basename }} password={{ ansible_password }}"
+  shell: >
+    sshpass -p "{{ ansible_password }}"
+    ssh -o StrictHostKeyChecking=no
+    {{ ansible_user }}@{{ ansible_host }}
+    "/system backup load name={{ backup_file.stdout | basename | regex_replace('\.backup$', '') }} password={{ ansible_password }}"
 
-
-- pause:
+- name: Wait for router reboot
+  pause:
     seconds: 90
+
+- name: Rollback completed
+  debug:
+    msg: "[ROLLBACK SUCCESS] Device restored to last known good configuration."

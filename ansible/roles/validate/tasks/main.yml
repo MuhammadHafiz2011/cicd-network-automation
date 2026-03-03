@@ -1,24 +1,22 @@
 ---
 
-
-- name: Validate interface IP format (must use CIDR)
+- name: Validate interface IP address format
   assert:
     that:
-      - item.ip_address is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$")
       - item.ip_address | ansible.utils.ipaddr
-    fail_msg: "Invalid interface IP: {{ item.ip_address }}"
+      - "'/' in item.ip_address"
+    fail_msg: "Invalid interface IP address: {{ item.ip_address }}"
+    success_msg: "Interface IP valid: {{ item.ip_address }}"
   loop: "{{ mikrotik_interfaces }}"
-
 
 
 - name: Validate DHCP network format
   assert:
     that:
-      - item.dhcp_network is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$")
       - item.dhcp_network | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP network: {{ item.dhcp_network }}"
+    success_msg: "DHCP network valid: {{ item.dhcp_network }}"
   loop: "{{ mikrotik_dhcp }}"
-
 
 
 - name: Validate DHCP gateway format
@@ -26,37 +24,37 @@
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP gateway: {{ item.dhcp_gateway }}"
+    success_msg: "DHCP gateway valid: {{ item.dhcp_gateway }}"
   loop: "{{ mikrotik_dhcp }}"
 
 
-
-- name: Validate DNS server format
+- name: Validate DNS server format STRICT
   assert:
     that:
+      - item.dns_server is match('^([0-9]{1,3}.){3}[0-9]{1,3}$')
       - item.dns_server | ansible.utils.ipaddr
     fail_msg: "Invalid DNS server: {{ item.dns_server }}"
+    success_msg: "DNS server valid: {{ item.dns_server }}"
   loop: "{{ mikrotik_dhcp }}"
-
 
 
 - name: Validate DHCP range format
   assert:
     that:
-      - item.dhcp_range is match("^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+-[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$")
       - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr
       - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP range: {{ item.dhcp_range }}"
+    success_msg: "DHCP range valid: {{ item.dhcp_range }}"
   loop: "{{ mikrotik_dhcp }}"
-
 
 
 - name: Validate gateway inside DHCP network
   assert:
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
-    fail_msg: "Gateway {{ item.dhcp_gateway }} not inside {{ item.dhcp_network }}"
+    fail_msg: "Gateway {{ item.dhcp_gateway }} NOT inside {{ item.dhcp_network }}"
+    success_msg: "Gateway inside network"
   loop: "{{ mikrotik_dhcp }}"
-
 
 
 - name: Validate DHCP range inside network
@@ -64,11 +62,41 @@
     that:
       - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr(item.dhcp_network)
       - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr(item.dhcp_network)
-    fail_msg: "DHCP range {{ item.dhcp_range }} not inside {{ item.dhcp_network }}"
+    fail_msg: "Range {{ item.dhcp_range }} NOT inside {{ item.dhcp_network }}"
+    success_msg: "DHCP range inside network"
   loop: "{{ mikrotik_dhcp }}"
 
+
+- name: Validate DHCP range start must be lower than end
+  assert:
+    that:
+      - >
+        (item.dhcp_range.split('-')[0] | ansible.utils.ipaddr('int'))
+        <
+        (item.dhcp_range.split('-')[1] | ansible.utils.ipaddr('int'))
+    fail_msg: >
+      DHCP range {{ item.dhcp_range }} INVALID.
+      Start IP must be lower than End IP
+    success_msg: "DHCP range order valid"
+  loop: "{{ mikrotik_dhcp }}"
+
+
+- name: Validate gateway inside interface network
+  assert:
+    that:
+      - item.1.dhcp_gateway | ansible.utils.ipaddr(item.0.ip_address)
+    fail_msg: >
+      DHCP gateway {{ item.1.dhcp_gateway }}
+      NOT inside interface network {{ item.0.ip_address }}
+    success_msg: >
+      DHCP gateway {{ item.1.dhcp_gateway }}
+      valid for {{ item.0.interface }}
+
+  loop: "{{ mikrotik_interfaces | product(mikrotik_dhcp) | list }}"
+
+  when: item.0.interface == item.1.interface
 
 
 - name: Validation success
   debug:
-    msg: "All configuration valid and safe to deploy"
+    msg: "ALL CONFIGURATION VALID AND SAFE TO DEPLOY"
