@@ -35,4 +35,4 @@
 
 - name: Backup completed
   debug:
-  msg: "[BACKUP SUCCESS] Binary snapshot saved as {{ backup_name }}.backup"
+    msg: "[BACKUP SUCCESS] Binary snapshot saved as {{ backup_name }}.backup"
