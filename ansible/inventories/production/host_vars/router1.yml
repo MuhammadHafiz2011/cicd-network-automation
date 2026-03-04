@@ -1,7 +1,7 @@
 mikrotik_interfaces:
 
   - interface: ether2
-    ip_address: 100.100.11.1/24
+    ip_address: 200.200.11.1/24
 
   - interface: ether3
     ip_address: 177.177.77.1/24
@@ -13,9 +13,9 @@ mikrotik_dhcp:
   - interface: ether2
     dhcp_name: dhcp_edge
     dhcp_pool: dhcp_pool_edge
-    dhcp_range: 100.100.11.13-100.100.11.20
-    dhcp_network: 100.100.11.0/24
-    dhcp_gateway: 100.100.11.1
+    dhcp_range: 200.200.11.13-200.200.11.20
+    dhcp_network: 200.200.11.0/24
+    dhcp_gateway: 200.200.11.1
     dns_server: 8.8.8.8
 
 
