@@ -4,7 +4,7 @@ mikrotik_interfaces:
     dhcp: true
 
   - interface: ether2
-    ip_address: 172.16.10.1/24
+    ip_address: 172.222.10.1/24
 
 
 
@@ -13,9 +13,9 @@ mikrotik_dhcp:
   - interface: ether2
     dhcp_name: dhcp_IoT
     dhcp_pool: dhcp_pool_Raspi
-    dhcp_range: 172.16.10.12-172.16.10.22
-    dhcp_network: 172.16.10.0/24
-    dhcp_gateway: 172.16.10.1
+    dhcp_range: 172.222.10.12-172.222.10.22
+    dhcp_network: 172.222.10.0/24
+    dhcp_gateway: 172.222.10.1
     dns_server: 8.8.8.8
 
 

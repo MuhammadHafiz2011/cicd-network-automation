@@ -44,27 +44,17 @@
 # ADD / UPDATE (IMPERATIVE - CORE)
 # ----------------------------------------
 
-- name: Add or Update DHCP server
+- name: Recreate DHCP server
   community.routeros.command:
     commands:
       - >
-        :local sName "{{ item.dhcp_name }}";
-        :local sIf "{{ item.interface }}";
-        :local sPool "{{ item.dhcp_pool }}";
-        :local existing [:len [/ip dhcp-server find name=$sName]];
+        /ip dhcp-server remove [find];
 
-        :if ($existing = 0) do={
-          /ip dhcp-server add name=$sName interface=$sIf address-pool=$sPool disabled=no;
-        } else={
-          :if (
-            [/ip dhcp-server get [find name=$sName] interface] != $sIf
-            or
-            [/ip dhcp-server get [find name=$sName] address-pool] != $sPool
-          ) do={
-            /ip dhcp-server remove [find name=$sName];
-            /ip dhcp-server add name=$sName interface=$sIf address-pool=$sPool disabled=no;
-          }
-        }
+        /ip dhcp-server add \
+        name="{{ item.dhcp_name }}" \
+        interface="{{ item.interface }}" \
+        address-pool="{{ item.dhcp_pool }}" \
+        disabled=no;
   loop: "{{ mikrotik_dhcp }}"
   loop_control:
     label: "Syncing Server: {{ item.dhcp_name }}"
