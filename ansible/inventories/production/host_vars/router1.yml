@@ -11,9 +11,9 @@ mikrotik_interfaces:
 mikrotik_dhcp:
 
   - interface: ether2
-    dhcp_name: dhcp_apis
-    dhcp_pool: KARL
-    dhcp_range: 172.16.10.6-172.16.10.10
+    dhcp_name: dhcp_IoT
+    dhcp_pool: dhcp_pool_Raspi
+    dhcp_range: 172.16.10.12-172.16.10.22
     dhcp_network: 172.16.10.0/24
     dhcp_gateway: 172.16.10.1
     dns_server: 8.8.8.8
