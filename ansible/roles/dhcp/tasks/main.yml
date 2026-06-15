@@ -1,5 +1,11 @@
 ---
 
-- import_tasks: pool.yml
-- import_tasks: server.yml
-- import_tasks: network.yml
+- name: Include DHCP network tasks
+  import_tasks: network.yml
+
+- name: Include DHCP pool tasks
+  import_tasks: pool.yml
+
+- name: Include DHCP server tasks
+  import_tasks: server.yml
+

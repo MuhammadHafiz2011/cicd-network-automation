@@ -1,147 +1,288 @@
 ---
 
-# ============================================================
-# COLLECT CURRENT STATE
-# ============================================================
+
+# ==================================================
+# COLLECT CURRENT DEVICE STATE
+# ==================================================
+
+# --------------------------------------------------
+# GET CURRENT IP ADDRESS CONFIGURATION
+# --------------------------------------------------
 
 - name: Get current IP configuration
   community.routeros.command:
     commands:
       - /ip address print detail without-paging
-  register: ip
+  register: current_ip
   changed_when: false
 
-- name: Get DHCP server configuration
+# --------------------------------------------------
+# GET CURRENT DHCP SERVER CONFIGURATION
+# --------------------------------------------------
+
+- name: Get current DHCP server configuration
   community.routeros.command:
     commands:
       - /ip dhcp-server print detail without-paging
-  register: dhcp
+  register: current_dhcp
   changed_when: false
 
-- name: Get DHCP network configuration
+# --------------------------------------------------
+# GET CURRENT DHCP NETWORK CONFIGURATION
+# --------------------------------------------------
+
+- name: Get current DHCP network configuration
   community.routeros.command:
     commands:
       - /ip dhcp-server network print detail without-paging
-  register: network
+  register: current_network
   changed_when: false
 
-- name: Get DHCP pool configuration
+# --------------------------------------------------
+# GET CURRENT DHCP POOL CONFIGURATION
+# --------------------------------------------------
+
+- name: Get current DHCP pool configuration
   community.routeros.command:
     commands:
       - /ip pool print detail without-paging
-  register: pool
+  register: current_pool
   changed_when: false
 
+# --------------------------------------------------
+# GET CURRENT DNS CONFIGURATION
+# --------------------------------------------------
 
-# ============================================================
-# VERIFY IP ADDRESS
-# ============================================================
-
-- name: Verify IP address exact
-  assert:
-    that:
-      - ip.stdout_lines | select('search', item.ip_address) | list | length > 0
-      - ip.stdout_lines | select('search', item.interface) | list | length > 0
-    fail_msg: >
-      [VERIFY STAGE FAILURE]
-      Expected IP {{ item.ip_address }} on interface {{ item.interface }} not found.
-      Device configuration does not match declared pipeline configuration.
-      Triggering rollback mechanism.
-    success_msg: >
-      [VERIFY SUCCESS]
-      IP {{ item.ip_address }} verified on interface {{ item.interface }}.
-  loop: "{{ mikrotik_interfaces }}"
-
-
-# ============================================================
-# VERIFY DHCP SERVER
-# ============================================================
-
-- name: Verify DHCP server exact
-  assert:
-    that:
-      - dhcp.stdout_lines | select('search', item.dhcp_name) | list | length > 0
-      - dhcp.stdout_lines | select('search', item.interface) | list | length > 0
-    fail_msg: >
-      [VERIFY STAGE FAILURE]
-      DHCP Server {{ item.dhcp_name }} missing or misconfigured.
-      Deployment result inconsistent with expected state.
-      Triggering rollback mechanism.
-    success_msg: >
-      [VERIFY SUCCESS]
-      DHCP Server {{ item.dhcp_name }} verified.
-  loop: "{{ mikrotik_dhcp }}"
-
-
-# ============================================================
-# VERIFY DHCP NETWORK
-# ============================================================
-
-- name: Verify DHCP network exact
-  assert:
-    that:
-      - network.stdout_lines | select('search', item.dhcp_network) | list | length > 0
-      - network.stdout_lines | select('search', item.dhcp_gateway) | list | length > 0
-    fail_msg: >
-      [VERIFY STAGE FAILURE]
-      DHCP Network {{ item.dhcp_network }} not found or incorrect.
-      Network definition mismatch detected.
-      Triggering rollback mechanism.
-    success_msg: >
-      [VERIFY SUCCESS]
-      DHCP Network {{ item.dhcp_network }} verified.
-  loop: "{{ mikrotik_dhcp }}"
-
-
-# ============================================================
-# VERIFY DHCP POOL
-# ============================================================
-
-- name: Verify DHCP pool exact
-  assert:
-    that:
-      - pool.stdout_lines | select('search', item.dhcp_pool) | list | length > 0
-      - pool.stdout_lines | select('search', item.dhcp_range) | list | length > 0
-    fail_msg: >
-      [VERIFY STAGE FAILURE]
-      DHCP Pool {{ item.dhcp_pool }} not detected or range mismatch.
-      Triggering rollback mechanism.
-    success_msg: >
-      [VERIFY SUCCESS]
-      DHCP Pool {{ item.dhcp_pool }} verified.
-  loop: "{{ mikrotik_dhcp }}"
-
-
-# ============================================================
-# SERVICE CONTINUITY VERIFICATION
-# ============================================================
-
-- name: Verify connectivity to Cloud
+- name: Get current DNS configuration
   community.routeros.command:
     commands:
-      - /ping {{ cloud_ip }} count=3
-  register: ping_result
+      - /ip dns print detail without-paging
+  register: current_dns
   changed_when: false
 
-- name: Fail if ping to Cloud failed
+# --------------------------------------------------
+# GET CURRENT NAT CONFIGURATION
+# --------------------------------------------------
+
+- name: Get current NAT configuration
+  community.routeros.command:
+    commands:
+      - /ip firewall nat print detail without-paging
+  register: current_nat
+  changed_when: false
+
+# =====================================
+# VERIFY DEPLOYED CONFIGURATION
+# =====================================
+
+# -------------------------------------
+# VERIFY INTERFACE IP ADDRESS
+# -------------------------------------
+
+- name: Verify interface IP configuration
   assert:
     that:
-      - "'packet-loss=100%' not in ping_result.stdout"
+      - >
+        current_ip.stdout[0]
+        is search(
+          'address=' ~ item.ip_address
+        )
+
+      - >
+        current_ip.stdout[0]
+        is search(
+          'interface=' ~ item.interface ~ '(\\s|$)'
+        )
+
     fail_msg: >
-      [SERVICE CONTINUITY FAILURE]
-      Cloud {{ cloud_ip }} unreachable from MikroTik gateway.
-      Edge-to-cloud communication disrupted.
-      Triggering automatic rollback.
+      [VERIFY FAILURE]
+      IP {{ item.ip_address }}
+      not found on interface {{ item.interface }}.
+      Configuration drift detected after deployment.
+
     success_msg: >
       [VERIFY SUCCESS]
-      Cloud {{ cloud_ip }} reachable from MikroTik gateway.
+      IP {{ item.ip_address }}
+      verified on interface {{ item.interface }}.
 
+  loop: "{{ mikrotik_interfaces }}"
+  loop_control:
+    label: "{{ item.interface }}"
 
-# ============================================================
-# FINAL SUCCESS
-# ============================================================
+  when: item.ip_address is defined
+
+# -------------------------------------
+# VERIFY DHCP SERVER
+# -------------------------------------
+
+- name: Verify DHCP server configuration
+  assert:
+    that:
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'name="' ~ item.dhcp_name ~ '"'
+        )
+
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'interface=' ~ item.interface
+        )
+
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'address-pool=' ~ item.dhcp_pool
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DHCP server {{ item.dhcp_name }}
+      not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DHCP server {{ item.dhcp_name }}
+      verified.
+
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
+
+# -------------------------------------
+# VERIFY DHCP NETWORK
+# -------------------------------------
+
+- name: Verify DHCP network configuration
+  assert:
+    that:
+      - >
+        current_network.stdout[0]
+        is search(
+          'address=' ~ item.dhcp_network
+        )
+
+      - >
+        current_network.stdout[0]
+        is search(
+          'gateway=' ~ item.dhcp_gateway
+        )
+
+      - >
+        current_network.stdout[0]
+        is search(
+          'dns-server=' ~ item.dns_server
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DHCP Network {{ item.dhcp_network }}
+      mismatch detected.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DHCP Network {{ item.dhcp_network }}
+      verified.
+
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_network }}"
+
+# -------------------------------------
+# VERIFY DHCP POOL
+# -------------------------------------
+
+- name: Verify DHCP pool configuration
+  assert:
+    that:
+      - >
+        current_pool.stdout[0]
+        is search(
+          'name="' ~ item.dhcp_pool ~ '"'
+        )
+
+      - >
+        current_pool.stdout[0]
+        is search(
+          'ranges=' ~ item.dhcp_range
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DHCP pool {{ item.dhcp_pool }}
+      mismatch detected.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DHCP pool {{ item.dhcp_pool }}
+      verified.
+
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_pool }}"
+
+# -------------------------------------
+# VERIFY DNS CONFIGURATION
+# -------------------------------------
+
+- name: Verify DNS configuration exists
+  assert:
+    that:
+      - current_dns.stdout is defined
+      - current_dns.stdout[0] | length > 0
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DNS configuration not found on device.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DNS configuration detected successfully.
+
+# -------------------------------------
+# VERIFY NAT RULES
+# -------------------------------------
+
+- name: Verify NAT rules
+  assert:
+    that:
+      - >
+        current_nat.stdout[0]
+        is search(
+          'chain=' ~ item.chain
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'out-interface=' ~ item.out_interface
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'action=' ~ item.action
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      NAT rule {{ item.chain }} | {{ item.out_interface }}
+      not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      NAT rule {{ item.chain }} | {{ item.out_interface }}
+      verified.
+
+  loop: "{{ mikrotik_nat }}"
+  loop_control:
+    label: "{{ item.chain }} | {{ item.out_interface }}"
+
+# -------------------------------------
+# VERIFICATION COMPLETED
+# -------------------------------------
 
 - name: Verification completed
   debug:
-    msg: "ALL CONFIGURATION AND SERVICE VERIFIED SUCCESSFULLY"
-
+    msg: "ALL CONFIGURATION AND SERVICES VERIFIED SUCCESSFULLY"

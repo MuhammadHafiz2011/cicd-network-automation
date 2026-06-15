@@ -1,38 +1,91 @@
 ---
 
-- name: Create timestamp
+# ==================================================
+# BACKUP CONFIGURATION
+# ==================================================
+
+# --------------------------------------------------
+# GENERATE BACKUP IDENTIFIER
+# --------------------------------------------------
+
+- name: Create backup timestamp
   set_fact:
-    backup_time: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+    backup_time: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
 
 - name: Set backup filename
   set_fact:
     backup_name: "{{ inventory_hostname }}-{{ backup_time }}"
 
+# --------------------------------------------------
+# PREPARE LOCAL BACKUP DIRECTORY
+# --------------------------------------------------
 
-- name: Ensure backup directory exists
+- name: Ensure local backup directory exists
   delegate_to: localhost
   file:
     path: "{{ playbook_dir }}/../backups"
     state: directory
     mode: '0755'
 
+# --------------------------------------------------
+# CREATE BACKUP ON MIKROTIK DEVICE
+# --------------------------------------------------
 
-- name: Create binary backup
+- name: Create binary backup on router
   community.routeros.command:
     commands:
-      - /system backup save name={{ backup_name }}
+      - "/system backup save name={{ backup_name }}"
 
-- name: Wait for file creation
+# --------------------------------------------------
+# WAIT FOR ROUTER TO FINISH WRITING FILE
+# --------------------------------------------------
+
+- name: Wait for backup file creation
   pause:
-    seconds: 5
+    seconds: 3
 
+# --------------------------------------------------
+# DOWNLOAD BACKUP FILE FROM ROUTER
+# --------------------------------------------------
 
-- name: Download binary backup
+- name: Download backup file
   ansible.netcommon.net_get:
     src: "{{ backup_name }}.backup"
     dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
 
+  register: download_result
+  retries: 3
+  delay: 3
+  until: download_result is succeeded
 
-- name: Backup completed
+# --------------------------------------------------
+# VERIFY BACKUP FILE EXISTS LOCALLY
+# --------------------------------------------------
+
+- name: Verify backup file exists
+  delegate_to: localhost
+  stat:
+    path: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
+
+  register: backup_file
+
+- name: Assert backup success
+  assert:
+    that:
+      - backup_file.stat.exists
+    fail_msg: >
+      [BACKUP FAILED]
+      Backup file was not created successfully.
+    success_msg: >
+      [BACKUP SUCCESS]
+      Backup file created successfully.
+
+# --------------------------------------------------
+# BACKUP COMPLETED
+# --------------------------------------------------
+
+- name: Show backup result
   debug:
-    msg: "[BACKUP SUCCESS] Binary snapshot saved as {{ backup_name }}.backup"
+    msg: >
+      [BACKUP SUCCESS]
+      {{ backup_name }}.backup downloaded successfully.

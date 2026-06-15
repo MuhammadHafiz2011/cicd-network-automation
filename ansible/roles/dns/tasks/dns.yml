@@ -1,0 +1,38 @@
+---
+
+# ==================================
+# DNS CONFIGURATION
+# ==================================
+
+# -------------------------------------
+# GET CURRENT DNS
+# -------------------------------------
+
+- name: Get current DNS config
+  community.routeros.command:
+    commands:
+      - /ip dns print detail without-paging
+  register: current_dns
+  changed_when: false
+
+# -------------------------------------
+# UPDATE DNS IF DIFFERENT
+# -------------------------------------
+
+- name: Update DNS if config mismatch
+  community.routeros.command:
+    commands:
+      - >
+        /ip dns set
+        servers={{ mikrotik_dns.servers | join(',') }}
+        allow-remote-requests={{ 'yes' if mikrotik_dns.allow_remote_requests else 'no' }}
+  when: >
+    (
+      (current_dns.stdout[0] | replace(' ', ''))
+      is not search("servers=" ~ (mikrotik_dns.servers | join(',')))
+    )
+    or
+    (
+      (current_dns.stdout[0] | replace(' ', ''))
+      is not search("allow-remote-requests=" ~ ('yes' if mikrotik_dns.allow_remote_requests else 'no'))
+    )

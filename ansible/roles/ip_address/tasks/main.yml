@@ -1,3 +1,4 @@
 ---
 
-- import_tasks: address.yml
+- name: Include IP address tasks
+  import_tasks: address.yml

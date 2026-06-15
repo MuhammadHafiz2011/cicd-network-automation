@@ -1,0 +1,4 @@
+---
+
+- name: Include Firewall NAT tasks
+  import_tasks: nat.yml

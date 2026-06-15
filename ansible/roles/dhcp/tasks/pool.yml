@@ -1,23 +1,76 @@
 ---
 
+# ==================================
+# DHCP POOL CONFIGURATION
+# ==================================
+
+# --------------------------------------
+# GET CURRENT DHCP POOLS
+# --------------------------------------
+
 - name: Get current DHCP pools
   community.routeros.command:
     commands:
-      - /ip pool print detail
+      - /ip pool print detail without-paging
   register: current_pool
+  changed_when: false
 
+# --------------------------------------
+# ADD OR UPDATE CORRECT POOL (FIXED)
+# --------------------------------------
 
-- name: Remove old DHCP pool if different
+- name: Add or Update DHCP pool
   community.routeros.command:
     commands:
-      - /ip pool remove [find name="{{ item.dhcp_pool }}"]
-  when: item.dhcp_range not in current_pool.stdout[0]
+      - >
+        :local pName "{{ item.dhcp_pool }}";
+        :local pRange "{{ item.dhcp_range }}";
+        :local existing [:len [/ip pool find name=$pName]];
+
+        :if ($existing = 0) do={
+            /ip pool add name=$pName ranges=$pRange;
+        } else={
+            :if ([/ip pool get [find name=$pName] ranges] != $pRange) do={
+                /ip pool set [find name=$pName] ranges=$pRange;
+            }
+        }
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "Syncing Pool: {{ item.dhcp_pool }}"
 
+# --------------------------------------
+# REFRESH STATE (IMPORTANT)
+# --------------------------------------
 
-- name: Add DHCP pool
+- name: Refresh DHCP pools
   community.routeros.command:
     commands:
-      - /ip pool add name="{{ item.dhcp_pool }}" ranges="{{ item.dhcp_range }}"
-  when: item.dhcp_range not in current_pool.stdout[0]
-  loop: "{{ mikrotik_dhcp }}"
+      - /ip pool print detail without-paging
+  register: updated_pool
+  changed_when: false
+
+# --------------------------------------
+# BUILD EXISTING POOL LIST
+# --------------------------------------
+
+- name: Build existing pool list
+  set_fact:
+    existing_pools: >-
+      {{
+        updated_pool.stdout[0]
+        | regex_findall('name=([^ ]+)')
+        | map('regex_replace', '"', '')
+        | map('trim')
+        | list
+      }}
+
+# --------------------------------------
+# REMOVE ORPHAN POOLS (FINAL CLEANUP)
+# --------------------------------------
+
+- name: Remove orphan DHCP pools
+  community.routeros.command:
+    commands:
+      - /ip pool remove [find name="{{ item }}"]
+  loop: "{{ existing_pools }}"
+  when: item not in (mikrotik_dhcp | map(attribute='dhcp_pool') | list)

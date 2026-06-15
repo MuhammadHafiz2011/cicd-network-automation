@@ -1,101 +1,231 @@
 ---
 
-- name: Validate interface IP address format
+# =================================
+# VALIDATE CONFIGURATION
+# =================================
+
+# -------------------------------------------------
+# VALIDATE INTERFACE CONFIGURATION
+# Memastikan IP interface valid dan menggunakan CIDR
+# -------------------------------------------------
+
+- name: Validate interface IP address
   assert:
     that:
       - item.ip_address | ansible.utils.ipaddr
-      - "'/' in item.ip_address"
-    fail_msg: "Invalid interface IP address: {{ item.ip_address }}"
+      - item.ip_address is search('/')
+    fail_msg: "Invalid interface IP: {{ item.ip_address }}"
     success_msg: "Interface IP valid: {{ item.ip_address }}"
   loop: "{{ mikrotik_interfaces }}"
+  loop_control:
+    label: "{{ item.interface }}"
+  when: item.ip_address is defined
 
+# -------------------------------------------------
+# VALIDATE DHCP NETWORK CONFIGURATION
+# Memastikan network DHCP valid
+# -------------------------------------------------
 
-- name: Validate DHCP network format
+- name: Validate DHCP network
   assert:
     that:
       - item.dhcp_network | ansible.utils.ipaddr
+      - item.dhcp_network is search('/')
     fail_msg: "Invalid DHCP network: {{ item.dhcp_network }}"
     success_msg: "DHCP network valid: {{ item.dhcp_network }}"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE DHCP GATEWAY
+# Memastikan gateway menggunakan format IP valid
+# -------------------------------------------------
 
-- name: Validate DHCP gateway format
+- name: Validate DHCP gateway
   assert:
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP gateway: {{ item.dhcp_gateway }}"
     success_msg: "DHCP gateway valid: {{ item.dhcp_gateway }}"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE DHCP DNS SERVER
+# Memastikan DNS server DHCP valid
+# -------------------------------------------------
 
-- name: Validate DNS server format STRICT
+- name: Validate DHCP DNS server
   assert:
     that:
-      - item.dns_server is match('^([0-9]{1,3}.){3}[0-9]{1,3}$')
       - item.dns_server | ansible.utils.ipaddr
-    fail_msg: "Invalid DNS server: {{ item.dns_server }}"
-    success_msg: "DNS server valid: {{ item.dns_server }}"
+    fail_msg: "Invalid DHCP DNS server: {{ item.dns_server }}"
+    success_msg: "DHCP DNS server valid: {{ item.dns_server }}"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE DHCP RANGE FORMAT
+# Memastikan range memiliki format start-end IP
+# -------------------------------------------------
 
-- name: Validate DHCP range format
+- name: Validate DHCP range
   assert:
     that:
+      - item.dhcp_range.split('-') | length == 2
       - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr
       - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr
     fail_msg: "Invalid DHCP range: {{ item.dhcp_range }}"
     success_msg: "DHCP range valid: {{ item.dhcp_range }}"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE GATEWAY LOCATION
+# Memastikan gateway berada di dalam network DHCP
+# -------------------------------------------------
 
 - name: Validate gateway inside DHCP network
   assert:
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
-    fail_msg: "Gateway {{ item.dhcp_gateway }} NOT inside {{ item.dhcp_network }}"
+    fail_msg: >
+      Gateway {{ item.dhcp_gateway }} NOT inside {{ item.dhcp_network }}
     success_msg: "Gateway inside network"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE DHCP RANGE LOCATION
+# Memastikan DHCP range masih berada di network
+# -------------------------------------------------
 
 - name: Validate DHCP range inside network
   assert:
     that:
       - item.dhcp_range.split('-')[0] | ansible.utils.ipaddr(item.dhcp_network)
       - item.dhcp_range.split('-')[1] | ansible.utils.ipaddr(item.dhcp_network)
-    fail_msg: "Range {{ item.dhcp_range }} NOT inside {{ item.dhcp_network }}"
+    fail_msg: >
+      DHCP range {{ item.dhcp_range }} NOT inside {{ item.dhcp_network }}
     success_msg: "DHCP range inside network"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE DHCP RANGE ORDER
+# Memastikan IP awal lebih kecil dari IP akhir
+# -------------------------------------------------
 
-- name: Validate DHCP range start must be lower than end
+- name: Validate DHCP range order (start < end)
   assert:
     that:
       - >
-        (item.dhcp_range.split('-')[0] | ansible.utils.ipaddr('int'))
-        <
+        (item.dhcp_range.split('-')[0] | ansible.utils.ipaddr('int')) <
         (item.dhcp_range.split('-')[1] | ansible.utils.ipaddr('int'))
     fail_msg: >
       DHCP range {{ item.dhcp_range }} INVALID.
       Start IP must be lower than End IP
     success_msg: "DHCP range order valid"
   loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
 
+# -------------------------------------------------
+# VALIDATE GLOBAL DNS CONFIGURATION
+# Memastikan daftar DNS server valid
+# -------------------------------------------------
 
-- name: Validate gateway inside interface network
+- name: Validate DNS servers list
   assert:
     that:
-      - item.1.dhcp_gateway | ansible.utils.ipaddr(item.0.ip_address)
-    fail_msg: >
-      DHCP gateway {{ item.1.dhcp_gateway }}
-      NOT inside interface network {{ item.0.ip_address }}
-    success_msg: >
-      DHCP gateway {{ item.1.dhcp_gateway }}
-      valid for {{ item.0.interface }}
+      - mikrotik_dns.servers is iterable
+      - mikrotik_dns.servers | length > 0
+    fail_msg: "DNS servers list is empty or invalid"
+    success_msg: "DNS servers list valid"
 
-  loop: "{{ mikrotik_interfaces | product(mikrotik_dhcp) | list }}"
+# -------------------------------------------------
+# VALIDATE EACH DNS SERVER
+# Memastikan setiap DNS server adalah IP valid
+# -------------------------------------------------
 
-  when: item.0.interface == item.1.interface
+- name: Validate each DNS server IP
+  assert:
+    that:
+      - item | ansible.utils.ipaddr
+    fail_msg: "Invalid DNS server: {{ item }}"
+    success_msg: "DNS server valid: {{ item }}"
+  loop: "{{ mikrotik_dns.servers }}"
+  loop_control:
+    label: "{{ item }}"
 
+# -------------------------------------------------
+# VALIDATE DNS REMOTE REQUEST OPTION
+# Memastikan nilai boolean true/false
+# -------------------------------------------------
+
+- name: Validate allow_remote_requests is boolean
+  assert:
+    that:
+      - mikrotik_dns.allow_remote_requests is boolean
+    fail_msg: "allow_remote_requests must be true/false"
+    success_msg: "allow_remote_requests valid"
+
+# -------------------------------------------------
+# VALIDATE NAT RULE STRUCTURE
+# Memastikan field NAT wajib tersedia
+# -------------------------------------------------
+
+- name: Validate NAT rules structure
+  assert:
+    that:
+      - item.chain is defined
+      - item.out_interface is defined
+      - item.action is defined
+    fail_msg: "Invalid NAT rule structure: {{ item }}"
+    success_msg: "NAT rule structure valid"
+  loop: "{{ mikrotik_nat }}"
+  loop_control:
+    label: "{{ item.chain }} | {{ item.out_interface }}"
+
+# -------------------------------------------------
+# VALIDATE NAT CHAIN
+# Membatasi chain hanya srcnat dan dstnat
+# -------------------------------------------------
+
+- name: Validate NAT chain
+  assert:
+    that:
+      - item.chain in ['srcnat', 'dstnat']
+    fail_msg: "Invalid NAT chain: {{ item.chain }}"
+    success_msg: "NAT chain valid"
+  loop: "{{ mikrotik_nat }}"
+  loop_control:
+    label: "{{ item.chain }} | {{ item.out_interface }}"
+
+# -------------------------------------------------
+# VALIDATE NAT INTERFACE
+# Memastikan interface NAT tersedia di inventory
+# -------------------------------------------------
+
+- name: Validate NAT interface exists
+  assert:
+    that:
+      - item.out_interface in (mikrotik_interfaces | map(attribute='interface') | list)
+    fail_msg: "Interface {{ item.out_interface }} not found in mikrotik_interfaces"
+    success_msg: "NAT interface valid"
+  loop: "{{ mikrotik_nat }}"
+  loop_control:
+    label: "{{ item.chain }} | {{ item.out_interface }}"
+
+# -------------------------------------------------
+# FINAL VALIDATION RESULT
+# -------------------------------------------------
 
 - name: Validation success
   debug:

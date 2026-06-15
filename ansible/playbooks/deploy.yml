@@ -1,7 +1,9 @@
 ---
 
 - name: Deploy MikroTik Configuration
+
   hosts: mikrotik
+
   gather_facts: no
 
   roles:
@@ -9,3 +11,7 @@
     - ip_address
 
     - dhcp
+
+    - firewall
+
+    - dns

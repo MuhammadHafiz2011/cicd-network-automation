@@ -1,13 +1,21 @@
 ---
 
-- name: GET ALL DHCP NETWORK
+# =================================================
+# DHCP NETWORK CONFIGURATION (FINAL - STABLE)
+# =================================================
+
+# -----------------------------------------------
+# EXISTING DHCP NETWORK
+# -----------------------------------------------
+
+- name: Ambil existing DHCP network
   community.routeros.command:
     commands:
-      - /ip dhcp-server network print detail
+      - /ip dhcp-server network print detail without-paging
   register: dhcp_network_all
+  changed_when: false
 
-
-- name: SET existing DHCP network list
+- name: Extract existing network address
   set_fact:
     existing_networks: >-
       {{
@@ -15,22 +23,62 @@
         | regex_findall('address=([0-9./]+)')
       }}
 
+- name: Set desired network
+  set_fact:
+    desired_networks: "{{ mikrotik_dhcp | map(attribute='dhcp_network') | list }}"
 
-- name: REMOVE OLD DHCP network
+# -----------------------------------------------
+# REMOVE NETWORK JIKA CONFIG BERUBAH
+# -----------------------------------------------
+
+- name: Remove old DHCP network
   community.routeros.command:
     commands:
-      - /ip dhcp-server network remove [find address="{{ item }}"]
-  loop: "{{ existing_networks }}"
-  when: item not in (mikrotik_dhcp | map(attribute='dhcp_network') | list)
+      - /ip dhcp-server network remove [find where address="{{ item }}"]
+  loop: "{{ existing_networks | difference(desired_networks) }}"
+  loop_control:
+    label: "{{ item }}"
 
+# -----------------------------------------------
+# FIX NETWORK CONFIG (gateway / dns beda)
+# -----------------------------------------------
 
-- name: CREATE DHCP network
+- name: Update DHCP network if config mismatch
+  community.routeros.command:
+    commands:
+      - >
+        /ip dhcp-server network set
+        [find where address="{{ item.dhcp_network }}"]
+        gateway={{ item.dhcp_gateway }}
+        dns-server={{ item.dns_server }}
+  when: >
+    (
+      dhcp_network_all.stdout[0] is search("address=" ~ item.dhcp_network)
+    ) and (
+      (
+        dhcp_network_all.stdout[0] is not search("address=" ~ item.dhcp_network ~ ".*gateway=" ~ item.dhcp_gateway)
+      )
+      or
+      (
+        dhcp_network_all.stdout[0] is not search("address=" ~ item.dhcp_network ~ ".*dns-server=" ~ item.dns_server)
+      )
+    )
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_network }}"
+
+# -----------------------------------------------
+# ADD NETWORK (FINAL STATE)
+# -----------------------------------------------
+- name: Add DHCP network if not exist
   community.routeros.command:
     commands:
       - >
         /ip dhcp-server network add
-        address="{{ item.dhcp_network }}"
-        gateway="{{ item.dhcp_gateway }}"
-        dns-server="{{ item.dns_server }}"
-  loop: "{{ mikrotik_dhcp }}"
+        address={{ item.dhcp_network }}
+        gateway={{ item.dhcp_gateway }}
+        dns-server={{ item.dns_server }}
   when: item.dhcp_network not in existing_networks
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_network }}"

@@ -1,0 +1,40 @@
+---
+
+# ==========================================
+# NAT CONFIGURATION
+# ==========================================
+
+# ------------------------------------------
+# GET CURRENT NAT RULES
+# ------------------------------------------
+
+- name: Get current NAT rules
+  community.routeros.command:
+    commands:
+      - /ip firewall nat print detail without-paging
+  register: current_nat
+  changed_when: false
+
+# ------------------------------------------
+# ADD NAT RULE IF NOT EXIST
+# ------------------------------------------
+
+- name: Add NAT rule if not exist
+  community.routeros.command:
+    commands:
+      - >
+        /ip firewall nat add
+        chain={{ item.chain }}
+        out-interface={{ item.out_interface }}
+        action={{ item.action }}
+
+  when:
+    - current_nat.stdout[0] is not search('chain=' ~ item.chain)
+      or
+      current_nat.stdout[0] is not search('out-interface=' ~ item.out_interface)
+      or
+      current_nat.stdout[0] is not search('action=' ~ item.action)
+
+  loop: "{{ mikrotik_nat }}"
+  loop_control:
+    label: "{{ item.chain }} | {{ item.out_interface }}"

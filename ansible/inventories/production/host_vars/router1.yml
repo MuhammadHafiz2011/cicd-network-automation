@@ -1,28 +1,34 @@
 mikrotik_interfaces:
 
-  - interface: ether2
-    ip_address: 200.200.11.1/24
+  - interface: wlan1
+    dhcp: true
 
-  - interface: ether3
-    ip_address: 177.177.77.1/24
+  - interface: ether2
+    ip_address: 172.16.10.1/24
 
 
 
 mikrotik_dhcp:
 
   - interface: ether2
-    dhcp_name: dhcp_edge
-    dhcp_pool: dhcp_pool_edge
-    dhcp_range: 200.200.11.13-200.200.11.20
-    dhcp_network: 200.200.11.0/24
-    dhcp_gateway: 200.200.11.1
+    dhcp_name: dhcp_apis
+    dhcp_pool: KARL
+    dhcp_range: 172.16.10.6-172.16.10.10
+    dhcp_network: 172.16.10.0/24
+    dhcp_gateway: 172.16.10.1
     dns_server: 8.8.8.8
 
 
-  - interface: ether3
-    dhcp_name: dhcp_cloud
-    dhcp_pool: dhcp_pool_cloud
-    dhcp_range: 177.177.77.43-177.177.77.45
-    dhcp_network: 177.177.77.0/24
-    dhcp_gateway: 177.177.77.1
-    dns_server: 8.8.8.8
+
+mikrotik_nat:
+  - chain: srcnat
+    out_interface: wlan1
+    action: masquerade
+
+
+
+mikrotik_dns:
+  servers:
+    - 8.8.8.8
+    - 4.4.4.4
+  allow_remote_requests: yes

@@ -1,0 +1,4 @@
+---
+
+- name: Include DNS tasks
+  import_tasks: dns.yml
