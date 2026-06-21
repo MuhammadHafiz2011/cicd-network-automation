@@ -6,17 +6,26 @@ mikrotik_interfaces:
   - interface: ether2
     ip_address: 172.222.10.1/24
 
+  - interface: ether3
+    ip_address: 192.12.11.1/24
 
 
 mikrotik_dhcp:
 
   - interface: ether2
-    dhcp_name: dhcp_IoT
-    dhcp_pool: dhcp_pool_Raspi
+    dhcp_name: dhcp_cek
+    dhcp_pool: dhcp_Raspi
     dhcp_range: 172.222.10.12-172.222.10.22
     dhcp_network: 172.222.10.0/24
     dhcp_gateway: 172.222.10.1
     dns_server: 8.8.8.8
+
+
+
+mikrotik_dhcp_lease:
+  - ip_address: 172.222.10.21
+    mac_address: DC:A6:32:E6:13:02
+    comment: Raspberry_ether2
 
 
 
@@ -25,10 +34,23 @@ mikrotik_nat:
     out_interface: wlan1
     action: masquerade
 
+  - chain: dstnat
+    protocol: tcp
+    dst_port: 8081
+    to_address: 172.222.10.12
+    to_port: 8080
+    action: dst-nat
+
+  - chain: dstnat
+    protocol: tcp
+    dst_port: 8080
+    to_address: 172.222.10.21
+    to_port: 8080
+    action: dst-nat
+
 
 
 mikrotik_dns:
   servers:
     - 8.8.8.8
-    - 4.4.4.4
   allow_remote_requests: yes

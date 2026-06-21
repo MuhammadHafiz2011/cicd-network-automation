@@ -9,3 +9,5 @@
 - name: Include DHCP server tasks
   import_tasks: server.yml
 
+- name: Include DHCP lease tasks
+  import_tasks: lease.yml

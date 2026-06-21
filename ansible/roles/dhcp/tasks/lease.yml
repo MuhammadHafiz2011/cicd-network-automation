@@ -1,0 +1,56 @@
+---
+
+# ==================================
+# DHCP LEASE CONFIGURATION
+# ==================================
+
+# --------------------------------------
+# GET CURRENT DHCP LEASES
+# --------------------------------------
+
+- name: Get current DHCP leases
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server lease print detail without-paging
+  register: current_lease
+  changed_when: false
+
+
+# --------------------------------------
+# ADD OR UPDATE DHCP LEASE
+# --------------------------------------
+
+- name: Add or Update DHCP lease
+  community.routeros.command:
+    commands:
+      - >
+        :local leaseIP "{{ item.ip_address }}";
+        :local leaseMAC "{{ item.mac_address }}";
+        :local leaseComment "{{ item.comment }}";
+
+        :if ([:len [/ip dhcp-server lease find mac-address=$leaseMAC]] = 0) do={
+
+          /ip dhcp-server lease add \
+          address=$leaseIP \
+          mac-address=$leaseMAC \
+          comment=$leaseComment;
+
+        } else={
+
+          :if (
+            [/ip dhcp-server lease get [find mac-address=$leaseMAC] address] != $leaseIP
+            or
+            [/ip dhcp-server lease get [find mac-address=$leaseMAC] comment] != $leaseComment
+          ) do={
+
+            /ip dhcp-server lease set \
+            [find mac-address=$leaseMAC] \
+            address=$leaseIP \
+            comment=$leaseComment;
+
+          }
+
+        }
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"

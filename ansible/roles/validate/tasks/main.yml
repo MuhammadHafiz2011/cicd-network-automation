@@ -137,6 +137,78 @@
     label: "{{ item.dhcp_name }}"
 
 # -------------------------------------------------
+# VALIDATE DHCP LEASE IP
+# Memastikan IP lease valid
+# -------------------------------------------------
+
+- name: Validate DHCP lease IP
+  assert:
+    that:
+      - item.ip_address | ansible.utils.ipaddr
+    fail_msg: "Invalid lease IP: {{ item.ip_address }}"
+    success_msg: "Lease IP valid"
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"
+
+# -------------------------------------------------
+# VALIDATE LEASE INSIDE DHCP NETWORK
+# Memastikan lease berada dalam subnet DHCP
+# -------------------------------------------------
+
+- name: Validate lease inside DHCP network
+  assert:
+    that:
+      - >
+        item.ip_address
+        | ansible.utils.ipaddr(
+            mikrotik_dhcp[0].dhcp_network
+          )
+    fail_msg: >
+      Lease {{ item.ip_address }}
+      NOT inside DHCP network {{ mikrotik_dhcp[0].dhcp_network }}
+    success_msg: "Lease inside DHCP network"
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"
+
+# -------------------------------------------------
+# VALIDATE DHCP LEASE MAC
+# Memastikan MAC address valid
+# -------------------------------------------------
+
+- name: Validate DHCP lease MAC
+  assert:
+    that:
+      - item.mac_address is match(
+          '^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$'
+        )
+    fail_msg: "Invalid MAC address: {{ item.mac_address }}"
+    success_msg: "Lease MAC valid"
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"
+
+# -------------------------------------------------
+# VALIDATE DHCP LEASE COMMENT
+# Memastikan comment tidak kosong
+# -------------------------------------------------
+
+- name: Validate DHCP lease comment
+  assert:
+    that:
+      - item.comment | length > 0
+    fail_msg: "Lease comment cannot be empty"
+    success_msg: "Lease comment valid"
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"
+
+# -------------------------------------------------
 # VALIDATE GLOBAL DNS CONFIGURATION
 # Memastikan daftar DNS server valid
 # -------------------------------------------------
@@ -177,51 +249,152 @@
     success_msg: "allow_remote_requests valid"
 
 # -------------------------------------------------
-# VALIDATE NAT RULE STRUCTURE
-# Memastikan field NAT wajib tersedia
+# VALIDATE SRCNAT STRUCTURE
+# Memastikan parameter wajib SRCNAT tersedia
 # -------------------------------------------------
 
-- name: Validate NAT rules structure
+- name: Validate srcnat structure
   assert:
     that:
-      - item.chain is defined
       - item.out_interface is defined
       - item.action is defined
-    fail_msg: "Invalid NAT rule structure: {{ item }}"
-    success_msg: "NAT rule structure valid"
-  loop: "{{ mikrotik_nat }}"
+    fail_msg: "Invalid SRCNAT rule: {{ item }}"
+    success_msg: "SRCNAT structure valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'srcnat')
+      | list
+    }}
+
   loop_control:
-    label: "{{ item.chain }} | {{ item.out_interface }}"
+    label: "{{ item.out_interface }}"
 
 # -------------------------------------------------
-# VALIDATE NAT CHAIN
-# Membatasi chain hanya srcnat dan dstnat
+# VALIDATE SRCNAT INTERFACE
+# Memastikan interface SRCNAT terdapat pada inventory
 # -------------------------------------------------
 
-- name: Validate NAT chain
+- name: Validate srcnat interface exists
   assert:
     that:
-      - item.chain in ['srcnat', 'dstnat']
-    fail_msg: "Invalid NAT chain: {{ item.chain }}"
-    success_msg: "NAT chain valid"
-  loop: "{{ mikrotik_nat }}"
+      - item.out_interface in (
+          mikrotik_interfaces
+          | map(attribute='interface')
+          | list
+        )
+    fail_msg: >
+      Interface {{ item.out_interface }} not found
+    success_msg: "SRCNAT interface valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'srcnat')
+      | list
+    }}
+
   loop_control:
-    label: "{{ item.chain }} | {{ item.out_interface }}"
+    label: "{{ item.out_interface }}"
 
 # -------------------------------------------------
-# VALIDATE NAT INTERFACE
-# Memastikan interface NAT tersedia di inventory
+# VALIDATE DSTNAT STRUCTURE
+# Memastikan parameter wajib DSTNAT tersedia
 # -------------------------------------------------
 
-- name: Validate NAT interface exists
+- name: Validate dstnat structure
   assert:
     that:
-      - item.out_interface in (mikrotik_interfaces | map(attribute='interface') | list)
-    fail_msg: "Interface {{ item.out_interface }} not found in mikrotik_interfaces"
-    success_msg: "NAT interface valid"
-  loop: "{{ mikrotik_nat }}"
+      - item.protocol is defined
+      - item.dst_port is defined
+      - item.to_address is defined
+      - item.to_port is defined
+      - item.action is defined
+    fail_msg: "Invalid DSTNAT rule: {{ item }}"
+    success_msg: "DSTNAT structure valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
   loop_control:
-    label: "{{ item.chain }} | {{ item.out_interface }}"
+    label: "{{ item.dst_port }}"
+
+# -------------------------------------------------
+# VALIDATE DSTNAT PROTOCOL
+# Memastikan protocol menggunakan TCP atau UDP
+# -------------------------------------------------
+
+- name: Validate dstnat protocol
+  assert:
+    that:
+      - item.protocol in ['tcp', 'udp']
+    fail_msg: >
+      Invalid protocol {{ item.protocol }}
+    success_msg: "DSTNAT protocol valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
+
+# -------------------------------------------------
+# VALIDATE DSTNAT TARGET IP
+# Memastikan alamat tujuan NAT menggunakan IP valid
+# -------------------------------------------------
+
+- name: Validate dstnat target IP
+  assert:
+    that:
+      - item.to_address | ansible.utils.ipaddr
+    fail_msg: >
+      Invalid destination IP {{ item.to_address }}
+    success_msg: "DSTNAT target IP valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
+
+# -------------------------------------------------
+# VALIDATE DSTNAT PORT
+# Memastikan dst_port dan to_port berada pada rentang 1-65535
+# -------------------------------------------------
+
+- name: Validate dstnat port
+  assert:
+    that:
+      - item.dst_port | int > 0
+      - item.dst_port | int < 65536
+      - item.to_port | int > 0
+      - item.to_port | int < 65536
+    fail_msg: >
+      Invalid NAT port configuration
+    success_msg: "DSTNAT ports valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
 
 # -------------------------------------------------
 # FINAL VALIDATION RESULT

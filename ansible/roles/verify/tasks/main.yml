@@ -50,6 +50,17 @@
   changed_when: false
 
 # --------------------------------------------------
+# GET CURRENT DHCP LEASE CONFIGURATION
+# --------------------------------------------------
+
+- name: Get current DHCP lease configuration
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server lease print detail without-paging
+  register: current_lease
+  changed_when: false
+
+# --------------------------------------------------
 # GET CURRENT DNS CONFIGURATION
 # --------------------------------------------------
 
@@ -223,6 +234,39 @@
     label: "{{ item.dhcp_pool }}"
 
 # -------------------------------------
+# VERIFY DHCP LEASE
+# -------------------------------------
+
+- name: Verify DHCP lease configuration
+  assert:
+    that:
+      - >
+        current_lease.stdout[0]
+        is search(
+          'address=' ~ item.ip_address
+        )
+
+      - >
+        current_lease.stdout[0]
+        is search(
+          'mac-address=' ~ item.mac_address
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DHCP Lease {{ item.comment }}
+      not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DHCP Lease {{ item.comment }}
+      verified.
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+  loop_control:
+    label: "{{ item.comment }}"
+
+# -------------------------------------
 # VERIFY DNS CONFIGURATION
 # -------------------------------------
 
@@ -241,16 +285,16 @@
       DNS configuration detected successfully.
 
 # -------------------------------------
-# VERIFY NAT RULES
+# VERIFY SRCNAT
 # -------------------------------------
 
-- name: Verify NAT rules
+- name: Verify SRCNAT configuration
   assert:
     that:
       - >
         current_nat.stdout[0]
         is search(
-          'chain=' ~ item.chain
+          'chain=srcnat'
         )
 
       - >
@@ -267,17 +311,80 @@
 
     fail_msg: >
       [VERIFY FAILURE]
-      NAT rule {{ item.chain }} | {{ item.out_interface }}
+      SRCNAT {{ item.out_interface }}
       not found or mismatched.
 
     success_msg: >
       [VERIFY SUCCESS]
-      NAT rule {{ item.chain }} | {{ item.out_interface }}
+      SRCNAT {{ item.out_interface }}
       verified.
 
-  loop: "{{ mikrotik_nat }}"
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'srcnat')
+      | list
+    }}
+
   loop_control:
-    label: "{{ item.chain }} | {{ item.out_interface }}"
+    label: "{{ item.out_interface }}"
+
+# -------------------------------------
+# VERIFY DSTNAT
+# -------------------------------------
+
+- name: Verify DSTNAT configuration
+  assert:
+    that:
+      - >
+        current_nat.stdout[0]
+        is search(
+          'protocol=' ~ item.protocol
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'dst-port=' ~ (item.dst_port | string)
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'to-addresses=' ~ item.to_address
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'to-ports=' ~ (item.to_port | string)
+        )
+
+      - >
+        current_nat.stdout[0]
+        is search(
+          'action=' ~ item.action
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DSTNAT {{ item.dst_port }}
+      not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DSTNAT {{ item.dst_port }}
+      verified.
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
 
 # -------------------------------------
 # VERIFICATION COMPLETED

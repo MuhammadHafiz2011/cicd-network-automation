@@ -15,26 +15,159 @@
   register: current_nat
   changed_when: false
 
-# ------------------------------------------
-# ADD NAT RULE IF NOT EXIST
-# ------------------------------------------
 
-- name: Add NAT rule if not exist
+# ==========================================
+# SRCNAT CONFIGURATION
+# ==========================================
+
+- name: Add or Update srcnat
   community.routeros.command:
     commands:
       - >
-        /ip firewall nat add
-        chain={{ item.chain }}
-        out-interface={{ item.out_interface }}
-        action={{ item.action }}
+        :local iface "{{ item.out_interface }}";
+        :local natAction "{{ item.action }}";
 
-  when:
-    - current_nat.stdout[0] is not search('chain=' ~ item.chain)
-      or
-      current_nat.stdout[0] is not search('out-interface=' ~ item.out_interface)
-      or
-      current_nat.stdout[0] is not search('action=' ~ item.action)
+        :local existing [/ip firewall nat find chain=srcnat];
 
-  loop: "{{ mikrotik_nat }}"
+        :if ([:len $existing] = 0) do={
+
+          /ip firewall nat add
+          chain=srcnat
+          out-interface=$iface
+          action=$natAction;
+
+        } else={
+
+          :if (
+            [/ip firewall nat get $existing out-interface] != $iface
+            or
+            [/ip firewall nat get $existing action] != $natAction
+          ) do={
+
+            /ip firewall nat remove $existing;
+
+            /ip firewall nat add
+            chain=srcnat
+            out-interface=$iface
+            action=$natAction;
+          }
+        }
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'srcnat')
+      | list
+    }}
+
   loop_control:
-    label: "{{ item.chain }} | {{ item.out_interface }}"
+    label: "srcnat {{ item.out_interface }}"
+
+
+# ==========================================
+# DSTNAT CONFIGURATION
+# ==========================================
+
+# ------------------------------------------
+# BUILD EXISTING DSTNAT PORT LIST
+# ------------------------------------------
+
+- name: Build existing dstnat ports
+  set_fact:
+    existing_dstnat_ports: >-
+      {{
+        current_nat.stdout[0]
+        | regex_findall('dst-port=([0-9]+)')
+        | map('string')
+        | list
+      }}
+
+# ------------------------------------------
+# BUILD DESIRED DSTNAT PORT LIST
+# ------------------------------------------
+
+- name: Build desired dstnat ports
+  set_fact:
+    desired_dstnat_ports: >-
+      {{
+        mikrotik_nat
+        | selectattr('chain', 'equalto', 'dstnat')
+        | map(attribute='dst_port')
+        | map('string')
+        | list
+      }}
+
+# ------------------------------------------
+# REMOVE ORPHAN DSTNAT
+# ------------------------------------------
+
+- name: Remove orphan dstnat
+  community.routeros.command:
+    commands:
+      - >
+        /ip firewall nat remove
+        [find where chain=dstnat and dst-port="{{ item }}"]
+  loop: "{{ existing_dstnat_ports | difference(desired_dstnat_ports) }}"
+  loop_control:
+    label: "{{ item }}"
+
+# ------------------------------------------
+# ADD or UPDATE
+# ------------------------------------------
+- name: Add or Update dstnat
+  community.routeros.command:
+    commands:
+      - >
+        :local proto "{{ item.protocol }}";
+        :local dstPort "{{ item.dst_port }}";
+        :local toAddr "{{ item.to_address }}";
+        :local toPort "{{ item.to_port }}";
+        :local natAction "{{ item.action }}";
+
+        :local existing [/ip firewall nat find
+        chain=dstnat
+        protocol=$proto
+        dst-port=$dstPort];
+
+        :if ([:len $existing] = 0) do={
+
+          /ip firewall nat add
+          chain=dstnat
+          protocol=$proto
+          dst-port=$dstPort
+          action=$natAction
+          to-addresses=$toAddr
+          to-ports=$toPort;
+
+        } else={
+
+          :if (
+            [/ip firewall nat get $existing to-addresses] != $toAddr
+            or
+            [/ip firewall nat get $existing to-ports] != $toPort
+            or
+            [/ip firewall nat get $existing action] != $natAction
+          ) do={
+
+            /ip firewall nat remove $existing;
+
+            /ip firewall nat add
+            chain=dstnat
+            protocol=$proto
+            dst-port=$dstPort
+            action=$natAction
+            to-addresses=$toAddr
+            to-ports=$toPort;
+          }
+        }
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "dstnat {{ item.dst_port }}"
+
