@@ -6,7 +6,6 @@
 
 # -------------------------------------------------
 # VALIDATE INTERFACE CONFIGURATION
-# Memastikan IP interface valid dan menggunakan CIDR
 # -------------------------------------------------
 
 - name: Validate interface IP address
@@ -23,7 +22,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP NETWORK CONFIGURATION
-# Memastikan network DHCP valid
 # -------------------------------------------------
 
 - name: Validate DHCP network
@@ -39,7 +37,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP GATEWAY
-# Memastikan gateway menggunakan format IP valid
 # -------------------------------------------------
 
 - name: Validate DHCP gateway
@@ -54,7 +51,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP DNS SERVER
-# Memastikan DNS server DHCP valid
 # -------------------------------------------------
 
 - name: Validate DHCP DNS server
@@ -69,7 +65,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP RANGE FORMAT
-# Memastikan range memiliki format start-end IP
 # -------------------------------------------------
 
 - name: Validate DHCP range
@@ -86,7 +81,6 @@
 
 # -------------------------------------------------
 # VALIDATE GATEWAY LOCATION
-# Memastikan gateway berada di dalam network DHCP
 # -------------------------------------------------
 
 - name: Validate gateway inside DHCP network
@@ -102,7 +96,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP RANGE LOCATION
-# Memastikan DHCP range masih berada di network
 # -------------------------------------------------
 
 - name: Validate DHCP range inside network
@@ -119,7 +112,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP RANGE ORDER
-# Memastikan IP awal lebih kecil dari IP akhir
 # -------------------------------------------------
 
 - name: Validate DHCP range order (start < end)
@@ -138,7 +130,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP LEASE IP
-# Memastikan IP lease valid
 # -------------------------------------------------
 
 - name: Validate DHCP lease IP
@@ -154,7 +145,6 @@
 
 # -------------------------------------------------
 # VALIDATE LEASE INSIDE DHCP NETWORK
-# Memastikan lease berada dalam subnet DHCP
 # -------------------------------------------------
 
 - name: Validate lease inside DHCP network
@@ -176,7 +166,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP LEASE MAC
-# Memastikan MAC address valid
 # -------------------------------------------------
 
 - name: Validate DHCP lease MAC
@@ -194,7 +183,6 @@
 
 # -------------------------------------------------
 # VALIDATE DHCP LEASE COMMENT
-# Memastikan comment tidak kosong
 # -------------------------------------------------
 
 - name: Validate DHCP lease comment
@@ -210,7 +198,6 @@
 
 # -------------------------------------------------
 # VALIDATE GLOBAL DNS CONFIGURATION
-# Memastikan daftar DNS server valid
 # -------------------------------------------------
 
 - name: Validate DNS servers list
@@ -223,7 +210,6 @@
 
 # -------------------------------------------------
 # VALIDATE EACH DNS SERVER
-# Memastikan setiap DNS server adalah IP valid
 # -------------------------------------------------
 
 - name: Validate each DNS server IP
@@ -238,7 +224,6 @@
 
 # -------------------------------------------------
 # VALIDATE DNS REMOTE REQUEST OPTION
-# Memastikan nilai boolean true/false
 # -------------------------------------------------
 
 - name: Validate allow_remote_requests is boolean
@@ -250,7 +235,6 @@
 
 # -------------------------------------------------
 # VALIDATE SRCNAT STRUCTURE
-# Memastikan parameter wajib SRCNAT tersedia
 # -------------------------------------------------
 
 - name: Validate srcnat structure
@@ -273,7 +257,6 @@
 
 # -------------------------------------------------
 # VALIDATE SRCNAT INTERFACE
-# Memastikan interface SRCNAT terdapat pada inventory
 # -------------------------------------------------
 
 - name: Validate srcnat interface exists
@@ -300,7 +283,6 @@
 
 # -------------------------------------------------
 # VALIDATE DSTNAT STRUCTURE
-# Memastikan parameter wajib DSTNAT tersedia
 # -------------------------------------------------
 
 - name: Validate dstnat structure
@@ -326,7 +308,6 @@
 
 # -------------------------------------------------
 # VALIDATE DSTNAT PROTOCOL
-# Memastikan protocol menggunakan TCP atau UDP
 # -------------------------------------------------
 
 - name: Validate dstnat protocol
@@ -349,7 +330,6 @@
 
 # -------------------------------------------------
 # VALIDATE DSTNAT TARGET IP
-# Memastikan alamat tujuan NAT menggunakan IP valid
 # -------------------------------------------------
 
 - name: Validate dstnat target IP
@@ -372,7 +352,6 @@
 
 # -------------------------------------------------
 # VALIDATE DSTNAT PORT
-# Memastikan dst_port dan to_port berada pada rentang 1-65535
 # -------------------------------------------------
 
 - name: Validate dstnat port

@@ -36,9 +36,9 @@ mikrotik_nat:
 
   - chain: dstnat
     protocol: tcp
-    dst_port: 8081
-    to_address: 172.222.10.12
-    to_port: 8080
+    dst_port: 5900
+    to_address: 172.222.10.21
+    to_port: 5900
     action: dst-nat
 
   - chain: dstnat

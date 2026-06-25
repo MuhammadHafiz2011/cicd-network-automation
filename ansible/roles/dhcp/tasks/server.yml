@@ -28,9 +28,6 @@
         | list
       }}
 
-- debug:
-    msg: "{{ existing_servers }}"
-
 # ----------------------------------------
 # REMOVE ORPHAN (FINAL CLEANUP)
 # ----------------------------------------
