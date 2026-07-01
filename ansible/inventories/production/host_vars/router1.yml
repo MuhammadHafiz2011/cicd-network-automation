@@ -21,7 +21,7 @@ mikrotik_dhcp:
 
 
 mikrotik_dhcp_lease:
-  - ip_address: 172.16.16.12
+  - ip_address: 172.16.16.15
     mac_address: DC:A6:32:E6:13:02
     comment: Raspberry_ether2
 
@@ -35,14 +35,14 @@ mikrotik_nat:
   - chain: dstnat
     protocol: tcp
     dst_port: 5900
-    to_address: 172.16.16.12
+    to_address: 172.16.16.15
     to_port: 5900
     action: dst-nat
 
   - chain: dstnat
     protocol: tcp
     dst_port: 8080
-    to_address: 172.16.16.12
+    to_address: 172.16.16.15
     to_port: 8080
     action: dst-nat
 
