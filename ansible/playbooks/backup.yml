@@ -1,11 +1,15 @@
 ---
+# =================================
+# Backup MikroTik Configuration
+# =================================
+# Playbook untuk menjalankan proses backup konfigurasi
+# sebelum deployment dilakukan.
 
 - name: Backup MikroTik Configuration
 
   hosts: mikrotik
 
   gather_facts: no
-
 
   roles:
 

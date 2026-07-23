@@ -1,27 +1,28 @@
 ---
-
-# ==========================================
+# ====================
 # NAT CONFIGURATION
-# ==========================================
+# ====================
 
-# ------------------------------------------
+# ------------------------
 # GET CURRENT NAT RULES
-# ------------------------------------------
+# ------------------------
 
-- name: Get current NAT rules
+- name: Get current NAT rule
   community.routeros.command:
     commands:
       - /ip firewall nat print detail without-paging
+# Menyimpan konfigurasi Firewall NAT yang sedang aktif pada MikroTik.
   register: current_nat
   changed_when: false
 
 
-# ==========================================
+# =======================
 # SRCNAT CONFIGURATION
-# ==========================================
+# =======================
 
-- name: Add or Update srcnat
+- name: Add or Update SRCNAT rule
   community.routeros.command:
+# Membuat atau memperbarui rule SRCNAT sesuai konfigurasi yang ditentukan.
     commands:
       - >
         :local iface "{{ item.out_interface }}";
@@ -64,15 +65,16 @@
     label: "srcnat {{ item.out_interface }}"
 
 
-# ==========================================
+# =======================
 # DSTNAT CONFIGURATION
-# ==========================================
+# =======================
 
-# ------------------------------------------
+# ----------------------------------
 # BUILD EXISTING DSTNAT PORT LIST
-# ------------------------------------------
+# ----------------------------------
 
 - name: Build existing dstnat ports
+# Menyusun daftar port DSTNAT yang sedang aktif pada MikroTik.
   set_fact:
     existing_dstnat_ports: >-
       {{
@@ -82,11 +84,12 @@
         | list
       }}
 
-# ------------------------------------------
+# ---------------------------------
 # BUILD DESIRED DSTNAT PORT LIST
-# ------------------------------------------
+# ---------------------------------
 
 - name: Build desired dstnat ports
+# Menyusun daftar port DSTNAT berdasarkan konfigurasi yang ditentukan.
   set_fact:
     desired_dstnat_ports: >-
       {{
@@ -97,12 +100,13 @@
         | list
       }}
 
-# ------------------------------------------
-# REMOVE ORPHAN DSTNAT
-# ------------------------------------------
+# -----------------------------
+# REMOVE UNUSED DSTNAT RULES 
+# -----------------------------
 
-- name: Remove orphan dstnat
+- name: Remove unused dstnat rule
   community.routeros.command:
+# MEnghapus rule DSTNAT yang sudah tidak digunakan.
     commands:
       - >
         /ip firewall nat remove
@@ -111,11 +115,12 @@
   loop_control:
     label: "{{ item }}"
 
-# ------------------------------------------
+# ----------------
 # ADD or UPDATE
-# ------------------------------------------
-- name: Add or Update dstnat
+# ----------------
+- name: Add or Update DSTNAT rule
   community.routeros.command:
+# Menambahkan atau memperbarui rule DSTNAT sesuai konfigurasi.
     commands:
       - >
         :local proto "{{ item.protocol }}";

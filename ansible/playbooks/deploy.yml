@@ -1,4 +1,9 @@
 ---
+# =================================
+# Deploy MikroTik Configuration
+# =================================
+# Playbook ini digunakan untuk memanggil seluruh role
+# konfigurasi yang akan diterapkan ke perangkat MikroTik.
 
 - name: Deploy MikroTik Configuration
 
@@ -8,10 +13,18 @@
 
   roles:
 
+    # Tahap 1
+    # Konfigurasi IP Address
     - ip_address
 
+    # Tahap 2
+    # Konfigurasi DHCP
     - dhcp
 
+    # Tahap 3
+    # Konfigurasi Firewall NAT
     - firewall
 
+    # Tahap 4
+    # Konfigurasi DNS
     - dns

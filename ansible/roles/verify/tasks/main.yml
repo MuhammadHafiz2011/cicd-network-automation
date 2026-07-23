@@ -1,24 +1,25 @@
 ---
-
-
 # ==================================================
 # COLLECT CURRENT DEVICE STATE
+# Mengambil seluruh konfigurasi aktual dari MikroTik.
+# Konfigurasi ini akan digunakan sebagai data pembanding
+# pada tahap verifikasi setelah proses deployment selesai.
 # ==================================================
 
-# --------------------------------------------------
+# ---------------------------------------
 # GET CURRENT IP ADDRESS CONFIGURATION
-# --------------------------------------------------
+# ---------------------------------------
 
-- name: Get current IP configuration
+- name: Get current IP address configuration
   community.routeros.command:
     commands:
       - /ip address print detail without-paging
   register: current_ip
   changed_when: false
 
-# --------------------------------------------------
+# ----------------------------------------
 # GET CURRENT DHCP SERVER CONFIGURATION
-# --------------------------------------------------
+# ----------------------------------------
 
 - name: Get current DHCP server configuration
   community.routeros.command:
@@ -27,9 +28,13 @@
   register: current_dhcp
   changed_when: false
 
-# --------------------------------------------------
+- name: Debug DHCP output
+  debug:
+    msg: "{{ current_dhcp.stdout[0] }}"
+
+# -----------------------------------------
 # GET CURRENT DHCP NETWORK CONFIGURATION
-# --------------------------------------------------
+# -----------------------------------------
 
 - name: Get current DHCP network configuration
   community.routeros.command:
@@ -38,9 +43,9 @@
   register: current_network
   changed_when: false
 
-# --------------------------------------------------
+# --------------------------------------
 # GET CURRENT DHCP POOL CONFIGURATION
-# --------------------------------------------------
+# --------------------------------------
 
 - name: Get current DHCP pool configuration
   community.routeros.command:
@@ -49,9 +54,9 @@
   register: current_pool
   changed_when: false
 
-# --------------------------------------------------
+# ---------------------------------------
 # GET CURRENT DHCP LEASE CONFIGURATION
-# --------------------------------------------------
+# ---------------------------------------
 
 - name: Get current DHCP lease configuration
   community.routeros.command:
@@ -60,9 +65,9 @@
   register: current_lease
   changed_when: false
 
-# --------------------------------------------------
+# --------------------------------
 # GET CURRENT DNS CONFIGURATION
-# --------------------------------------------------
+# --------------------------------
 
 - name: Get current DNS configuration
   community.routeros.command:
@@ -71,9 +76,9 @@
   register: current_dns
   changed_when: false
 
-# --------------------------------------------------
+# --------------------------------
 # GET CURRENT NAT CONFIGURATION
-# --------------------------------------------------
+# --------------------------------
 
 - name: Get current NAT configuration
   community.routeros.command:
@@ -82,13 +87,17 @@
   register: current_nat
   changed_when: false
 
-# =====================================
+# =====================================================
 # VERIFY DEPLOYED CONFIGURATION
-# =====================================
+# Membandingkan konfigurasi yang telah dideploy dengan
+# kondisi aktual pada MikroTik.
+# Jika ditemukan perbedaan, proses deployment akan
+# dihentikan melalui mekanisme assert.
+# =====================================================
 
-# -------------------------------------
+# ------------------------------
 # VERIFY INTERFACE IP ADDRESS
-# -------------------------------------
+# ------------------------------
 
 - name: Verify interface IP configuration
   assert:
@@ -122,10 +131,9 @@
 
   when: item.ip_address is defined
 
-# -------------------------------------
+# ---------------------
 # VERIFY DHCP SERVER
-# -------------------------------------
-
+# ---------------------
 - name: Verify DHCP server configuration
   assert:
     that:
@@ -161,9 +169,9 @@
   loop_control:
     label: "{{ item.dhcp_name }}"
 
-# -------------------------------------
+# ----------------------
 # VERIFY DHCP NETWORK
-# -------------------------------------
+# ----------------------
 
 - name: Verify DHCP network configuration
   assert:
@@ -200,9 +208,9 @@
   loop_control:
     label: "{{ item.dhcp_network }}"
 
-# -------------------------------------
+# -------------------
 # VERIFY DHCP POOL
-# -------------------------------------
+# -------------------
 
 - name: Verify DHCP pool configuration
   assert:
@@ -233,9 +241,9 @@
   loop_control:
     label: "{{ item.dhcp_pool }}"
 
-# -------------------------------------
+# --------------------
 # VERIFY DHCP LEASE
-# -------------------------------------
+# --------------------
 
 - name: Verify DHCP lease configuration
   assert:
@@ -266,27 +274,45 @@
   loop_control:
     label: "{{ item.comment }}"
 
+# ---------------------------
+# VERIFY DNS CONFIGURATION
+# ---------------------------
+
 # -------------------------------------
 # VERIFY DNS CONFIGURATION
 # -------------------------------------
 
-- name: Verify DNS configuration exists
+- name: Verify DNS configuration
   assert:
     that:
-      - current_dns.stdout is defined
-      - current_dns.stdout[0] | length > 0
+      - >
+        current_dns.stdout[0]
+        is search(
+          'servers=' ~ (mikrotik_dns.servers | join(','))
+        )
+
+      - >
+        current_dns.stdout[0]
+        is search(
+          'allow-remote-requests=' ~
+          (
+            'yes'
+            if mikrotik_dns.allow_remote_requests
+            else 'no'
+          )
+        )
 
     fail_msg: >
       [VERIFY FAILURE]
-      DNS configuration not found on device.
+      DNS configuration not found or mismatched.
 
     success_msg: >
       [VERIFY SUCCESS]
-      DNS configuration detected successfully.
+      DNS configuration verified.
 
-# -------------------------------------
+# ----------------
 # VERIFY SRCNAT
-# -------------------------------------
+# ----------------
 
 - name: Verify SRCNAT configuration
   assert:
@@ -329,9 +355,9 @@
   loop_control:
     label: "{{ item.out_interface }}"
 
-# -------------------------------------
+# ----------------
 # VERIFY DSTNAT
-# -------------------------------------
+# ----------------
 
 - name: Verify DSTNAT configuration
   assert:
@@ -386,10 +412,10 @@
   loop_control:
     label: "{{ item.dst_port }}"
 
-# -------------------------------------
-# VERIFICATION COMPLETED
-# -------------------------------------
+# ----------------------------
+# FINAL VERIFICATION RESULT 
+# ----------------------------
 
-- name: Verification completed
+- name: Verification success
   debug:
-    msg: "ALL CONFIGURATION AND SERVICES VERIFIED SUCCESSFULLY"
+    msg: "Deployment verification completed successfully"

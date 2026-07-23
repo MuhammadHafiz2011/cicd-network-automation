@@ -1,4 +1,9 @@
 ---
+# ===================================
+# Validate MikroTik Configuration
+# ===================================
+# Playbook untuk menjalankan proses validasi konfigurasi
+# sebelum deployment dilakukan.
 
 - name: Validate MikroTik Configuration
 

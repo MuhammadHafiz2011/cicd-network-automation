@@ -1,4 +1,9 @@
 ---
+# ===========
+# DNS Role
+# ===========
+# Role ini digunakan untuk memanggil seluruh task
+# konfigurasi DNS pada perangkat MikroTik.
 
 - name: Include DNS tasks
   import_tasks: dns.yml

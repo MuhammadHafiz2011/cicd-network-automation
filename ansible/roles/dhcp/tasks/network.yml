@@ -1,21 +1,23 @@
 ---
 
-# =================================================
-# DHCP NETWORK CONFIGURATION (FINAL - STABLE)
-# =================================================
+# =============================
+# DHCP NETWORK CONFIGURATION
+# =============================
 
-# -----------------------------------------------
-# EXISTING DHCP NETWORK
-# -----------------------------------------------
+# ----------------------------
+# GET CURRENT DHCP NETWORKS
+# ----------------------------
+# Menyimpan konfigurasi DHCP Network yang sedang aktif pada MikroTik.
 
-- name: Ambil existing DHCP network
+- name: Get current DHCP networks
   community.routeros.command:
     commands:
       - /ip dhcp-server network print detail without-paging
   register: dhcp_network_all
   changed_when: false
 
-- name: Extract existing network address
+# Menyusun daftar DHCP Network yang saat ini terdapat pada MikroTik sebagai acuan untuk proses sinkronisasi konfigurasi.
+- name: Build existing network list
   set_fact:
     existing_networks: >-
       {{
@@ -23,15 +25,17 @@
         | regex_findall('address=([0-9./]+)')
       }}
 
-- name: Set desired network
+# Menyusun daftar DHCP Network berdasarkan konfigurasi pada inventory.
+- name: Build desired DHCP network list
   set_fact:
     desired_networks: "{{ mikrotik_dhcp | map(attribute='dhcp_network') | list }}"
 
-# -----------------------------------------------
-# REMOVE NETWORK JIKA CONFIG BERUBAH
-# -----------------------------------------------
+# ------------------------------
+# REMOVE UNUSED DHCP NETWORKS
+# ------------------------------
+# Menghapus DHCP Network yang tidak lagi terdapat pada inventory, termasuk network lama yang telah diganti subnetnya.
 
-- name: Remove old DHCP network
+- name: Remove unused DHCP networks
   community.routeros.command:
     commands:
       - /ip dhcp-server network remove [find where address="{{ item }}"]
@@ -39,11 +43,12 @@
   loop_control:
     label: "{{ item }}"
 
-# -----------------------------------------------
-# FIX NETWORK CONFIG (gateway / dns beda)
-# -----------------------------------------------
+# -----------------------------------------
+# UPDATE DHCP NETWORK IF CONFIG MISMATCH
+# -----------------------------------------
+# Memperbarui gateway atau DNS Server apabila konfigurasi DHCP Network berbeda.
 
-- name: Update DHCP network if config mismatch
+- name: Update DHCP network
   community.routeros.command:
     commands:
       - >
@@ -67,10 +72,12 @@
   loop_control:
     label: "{{ item.dhcp_network }}"
 
-# -----------------------------------------------
-# ADD NETWORK (FINAL STATE)
-# -----------------------------------------------
-- name: Add DHCP network if not exist
+# --------------------------------
+# ADD DHCP NETWORK IF NOT EXIST 
+# --------------------------------
+# Menambahkan DHCP Network baru apabila subnet belum terdapat pada MikroTik.
+
+- name: Add DHCP network
   community.routeros.command:
     commands:
       - >

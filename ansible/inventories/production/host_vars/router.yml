@@ -1,0 +1,96 @@
+# ====================================================
+# Router Configuration
+# ====================================================
+# File ini berisi konfigurasi yang akan diterapkan
+# pada perangkat.
+
+# -----------------------------------------------
+# Interface Configuration
+# -----------------------------------------------
+# Konfigurasi alamat IP dan interface jaringan.
+
+mikrotik_interfaces:
+
+  - interface: wlan1
+    dhcp: true
+
+  - interface: bridge-lan
+    ip_address: 172.16.16.1/24
+
+  - interface: ether4
+    ip_address: 10.10.10.1/24
+
+  - interface: ether5
+    ip_address: 192.168.10.1/24
+
+
+# -------------------------------------
+# DHCP Configuration
+# -------------------------------------
+# Parameter konfigurasi DHCP Server.
+
+mikrotik_dhcp:
+
+  - interface: bridge-lan
+    dhcp_name: dhcp_IoT
+    dhcp_pool: dhcp_RaspberryPi
+    dhcp_range: 172.16.16.5-172.16.16.10
+    dhcp_network: 172.16.16.0/24
+    dhcp_gateway: 172.16.16.1
+    dns_server: 8.8.8.8
+
+  - interface: ether4
+    dhcp_name: dhcp_mikrt
+    dhcp_pool: dhcp_igl
+    dhcp_range: 10.10.10.12-10.10.10.100
+    dhcp_network: 10.10.10.0/24
+    dhcp_gateway: 10.10.10.1
+    dns_server: 8.8.8.8
+
+
+# ---------------------------------
+# DHCP Lease
+# ---------------------------------
+# Konfigurasi static DHCP lease.
+
+mikrotik_dhcp_lease:
+  - ip_address: 172.16.16.20
+    mac_address: DC:A6:32:E6:13:02
+    comment: Raspberry_ether2
+
+
+# ---------------------------------------
+# Firewall NAT
+# ---------------------------------------
+# Konfigurasi aturan NAT pada MikroTik.
+
+mikrotik_nat:
+  - chain: srcnat
+    out_interface: wlan1
+    action: masquerade
+
+  - chain: dstnat
+    protocol: tcp
+    dst_port: 5900
+    to_address: 172.16.16.20
+    to_port: 5900
+    action: dst-nat
+
+  - chain: dstnat
+    protocol: tcp
+    dst_port: 8080
+    to_address: 172.16.16.20
+    to_port: 8080
+    action: dst-nat
+
+
+# -------------------------
+# DNS Configuration
+# -------------------------
+# Konfigurasi DNS Server.
+
+mikrotik_dns:
+  servers:
+    - 8.8.8.8
+    - 4.4.4.4
+  allow_remote_requests: yes

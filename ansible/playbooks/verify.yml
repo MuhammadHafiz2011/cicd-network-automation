@@ -1,4 +1,9 @@
 ---
+# =================================
+# Verify MikroTik Configuration
+# =================================
+# Playbook untuk menjalankan proses verifikasi setelah
+# deployment selesai.
 
 - name: Verify MikroTik Configuration
 

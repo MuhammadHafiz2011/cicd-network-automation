@@ -12,12 +12,14 @@
   community.routeros.command:
     commands:
       - /ip pool print detail without-paging
+# Menyimpan daftar DHCP Pool yang sedang aktif pada MikroTik.
   register: current_pool
   changed_when: false
 
 # --------------------------------------
-# ADD OR UPDATE CORRECT POOL (FIXED)
+# ADD OR UPDATE DHCP POOL
 # --------------------------------------
+# Menambahkan DHCP Pool baru atau memperbarui rentang IP apabila DHCP Pool dengan nama yang sama sudah ada.
 
 - name: Add or Update DHCP pool
   community.routeros.command:
@@ -39,10 +41,11 @@
     label: "Syncing Pool: {{ item.dhcp_pool }}"
 
 # --------------------------------------
-# REFRESH STATE (IMPORTANT)
+# REFRESH STATE
 # --------------------------------------
+# Memperbarui state DHCP Pool setelah proses Add/Update agar task berikutnya menggunakan konfigurasi terbaru.
 
-- name: Refresh DHCP pools
+- name: Refresh DHCP pools state
   community.routeros.command:
     commands:
       - /ip pool print detail without-paging
@@ -52,6 +55,7 @@
 # --------------------------------------
 # BUILD EXISTING POOL LIST
 # --------------------------------------
+# Menyusun daftar DHCP Pool yang saat ini terdapat pada MikroTik.
 
 - name: Build existing pool list
   set_fact:
@@ -65,10 +69,11 @@
       }}
 
 # --------------------------------------
-# REMOVE ORPHAN POOLS (FINAL CLEANUP)
+# REMOVE UNUSED DHCP POOLS
 # --------------------------------------
+# Menghapus DHCP Pool yang tidak lagi terdapat pada inventory, termasuk pool lama yang telah diganti namanya.
 
-- name: Remove orphan DHCP pools
+- name: Remove unused DHCP pools
   community.routeros.command:
     commands:
       - /ip pool remove [find name="{{ item }}"]

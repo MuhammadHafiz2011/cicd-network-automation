@@ -1,4 +1,9 @@
 ---
+# ==================
+# IP Address Role
+# ==================
+# Role ini digunakan untuk memanggil seluruh task
+# konfigurasi IP Address pada perangkat MikroTik.
 
 - name: Include IP address tasks
   import_tasks: address.yml

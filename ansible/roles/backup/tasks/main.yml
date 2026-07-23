@@ -1,55 +1,59 @@
 ---
-
-# ==================================================
+# =======================
 # BACKUP CONFIGURATION
-# ==================================================
+# =======================
 
-# --------------------------------------------------
+# -----------------------------
 # GENERATE BACKUP IDENTIFIER
-# --------------------------------------------------
+# -----------------------------
 
-- name: Create backup timestamp
+- name: Create timestamp
+# Membuat timestamp sebagai identitas unik untuk file backup.
   set_fact:
     backup_time: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
 
 - name: Set backup filename
+# Menyusun nama file backup berdasarkan hostname dan timestamp.
   set_fact:
     backup_name: "{{ inventory_hostname }}-{{ backup_time }}"
 
-# --------------------------------------------------
+# ---------------------------------
 # PREPARE LOCAL BACKUP DIRECTORY
-# --------------------------------------------------
+# ---------------------------------
 
 - name: Ensure local backup directory exists
+# Membuat direktori backup pada CI/CD Controller apabila belum tersedia.
   delegate_to: localhost
   file:
     path: "{{ playbook_dir }}/../backups"
     state: directory
     mode: '0755'
 
-# --------------------------------------------------
+# -----------------------------------
 # CREATE BACKUP ON MIKROTIK DEVICE
-# --------------------------------------------------
+# -----------------------------------
 
-- name: Create binary backup on router
+- name: Create router backup
   community.routeros.command:
+# Membuat file backup biner pada perangkat MikroTik.
     commands:
       - "/system backup save name={{ backup_name }}"
 
-# --------------------------------------------------
+# -----------------------------------------
 # WAIT FOR ROUTER TO FINISH WRITING FILE
-# --------------------------------------------------
+# -----------------------------------------
 
-- name: Wait for backup file creation
+- name: Wait for file creation
   pause:
     seconds: 3
 
-# --------------------------------------------------
+# -----------------------------------
 # DOWNLOAD BACKUP FILE FROM ROUTER
-# --------------------------------------------------
+# -----------------------------------
 
-- name: Download backup file
+- name: Download binary backup
   ansible.netcommon.net_get:
+# Mengunduh file backup dari MikroTik ke direktori backup pada CI/CD COntroller.
     src: "{{ backup_name }}.backup"
     dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
 
@@ -58,18 +62,20 @@
   delay: 3
   until: download_result is succeeded
 
-# --------------------------------------------------
+# ------------------------------------
 # VERIFY BACKUP FILE EXISTS LOCALLY
-# --------------------------------------------------
+# ------------------------------------
 
 - name: Verify backup file exists
   delegate_to: localhost
+# Memastikan file backup berhasil tersimpan pada CI/CD Controller.
   stat:
     path: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
 
   register: backup_file
 
-- name: Assert backup success
+- name: Validate backup success
+# Memvalidasi keberhasilan proses backup.
   assert:
     that:
       - backup_file.stat.exists
@@ -80,11 +86,11 @@
       [BACKUP SUCCESS]
       Backup file created successfully.
 
-# --------------------------------------------------
+# -------------------
 # BACKUP COMPLETED
-# --------------------------------------------------
+# -------------------
 
-- name: Show backup result
+- name: Display backup success message
   debug:
     msg: >
       [BACKUP SUCCESS]

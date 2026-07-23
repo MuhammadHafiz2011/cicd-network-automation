@@ -1,23 +1,25 @@
 ---
 
-# ============================================
-# DHCP SERVER CONFIGURATION (FINAL - STABLE)
-# ============================================
+# ============================
+# DHCP SERVER CONFIGURATION
+# ============================
 
-# ----------------------------------------
+# --------------------------
 # GET CURRENT DHCP SERVER
-# ----------------------------------------
+# --------------------------
 
 - name: Get current DHCP servers
   community.routeros.command:
     commands:
       - /ip dhcp-server print detail without-paging
+# Menyimpan daftar DHCP Server yang sedang aktif pada MikroTik.
   register: current_dhcp
   changed_when: false
 
-# ----------------------------------------
-# BUILD EXISTING SERVER LIST (CLEAN)
-# ----------------------------------------
+# -----------------------------
+# BUILD EXISTING SERVER LIST
+# -----------------------------
+# Menyusun daftar DHCP Server yang saat ini terdapat pada MikroTik.
 
 - name: Build existing server list
   set_fact:
@@ -28,20 +30,22 @@
         | list
       }}
 
-# ----------------------------------------
-# REMOVE ORPHAN (FINAL CLEANUP)
-# ----------------------------------------
+# -----------------------------
+# REMOVE UNUSED DHCP SERVERS
+# -----------------------------
+# Menghapus DHCP Server yang tidak lagi terdapat pada inventory, termasuk server lama yang telah diganti namanya.
 
-- name: Remove orphan DHCP servers
+- name: Remove unused DHCP servers
   community.routeros.command:
     commands:
       - /ip dhcp-server remove [find name="{{ item }}"]
   loop: "{{ existing_servers }}"
   when: item not in (mikrotik_dhcp | map(attribute='dhcp_name') | list)
 
-# ----------------------------------------
-# ADD / UPDATE (IMPERATIVE - CORE)
-# ----------------------------------------
+# ---------------------------
+# ADD / UPDATE DHCP SERVER
+# ---------------------------
+# Menambahkan DHCP Server baru atau memperbarui interface dan address pool apabila konfigurasi berbeda.
 
 - name: Add or Update DHCP server
   community.routeros.command:

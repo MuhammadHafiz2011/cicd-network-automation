@@ -1,18 +1,26 @@
-# =========================
-# CONNECTION CONFIGURATION
-# =========================
+# ============================
+# Connection Configuration
+# ============================
+# Konfigurasi koneksi yang digunakan untuk seluruh
+# perangkat MikroTik pada inventory.
 
 ansible_connection: network_cli
 ansible_network_os: community.routeros.routeros
 
-# -------------------------
+# ==================
+# Authentication
+# ==================
+# Parameter autentikasi SSH yang digunakan Ansible
+# untuk mengakses perangkat MikroTik.
 
-# AUTHENTICATION
 ansible_user: admin
 ansible_ssh_private_key_file: ~/.ssh/id_rsa
 ansible_port: 22
 
-# -------------------------
+# ======================
+# Execution Settings
+# ======================
+# Waktu maksimum eksekusi setiap perintah Ansible
+# pada perangkat MikroTik.
 
-# OPTIONAL SETTINGS
 ansible_command_timeout: 30

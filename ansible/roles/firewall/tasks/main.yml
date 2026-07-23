@@ -1,4 +1,9 @@
 ---
+# ================
+# Firewall Role
+# ================
+# Role ini digunakan untuk memanggil seluruh task
+# konfigurasi Firewall NAT pada perangkat MikroTik.
 
 - name: Include Firewall NAT tasks
   import_tasks: nat.yml

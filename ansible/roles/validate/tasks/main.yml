@@ -80,10 +80,10 @@
     label: "{{ item.dhcp_name }}"
 
 # -------------------------------------------------
-# VALIDATE GATEWAY LOCATION
+# VALIDATE DHCP GATEWAY LOCATION
 # -------------------------------------------------
 
-- name: Validate gateway inside DHCP network
+- name: Validate DHCP gateway inside DHCP network
   assert:
     that:
       - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
@@ -144,7 +144,7 @@
     label: "{{ item.comment }}"
 
 # -------------------------------------------------
-# VALIDATE LEASE INSIDE DHCP NETWORK
+# VALIDATE DHCP LEASE LOCATION
 # -------------------------------------------------
 
 - name: Validate lease inside DHCP network
@@ -226,7 +226,7 @@
 # VALIDATE DNS REMOTE REQUEST OPTION
 # -------------------------------------------------
 
-- name: Validate allow_remote_requests is boolean
+- name: Validate DNS remote request option
   assert:
     that:
       - mikrotik_dns.allow_remote_requests is boolean
@@ -259,7 +259,7 @@
 # VALIDATE SRCNAT INTERFACE
 # -------------------------------------------------
 
-- name: Validate srcnat interface exists
+- name: Validate srcnat interface
   assert:
     that:
       - item.out_interface in (
