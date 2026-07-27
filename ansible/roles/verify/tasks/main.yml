@@ -17,21 +17,6 @@
   register: current_ip
   changed_when: false
 
-# ----------------------------------------
-# GET CURRENT DHCP SERVER CONFIGURATION
-# ----------------------------------------
-
-- name: Get current DHCP server configuration
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server print detail without-paging
-  register: current_dhcp
-  changed_when: false
-
-- name: Debug DHCP output
-  debug:
-    msg: "{{ current_dhcp.stdout[0] }}"
-
 # -----------------------------------------
 # GET CURRENT DHCP NETWORK CONFIGURATION
 # -----------------------------------------
@@ -54,6 +39,17 @@
   register: current_pool
   changed_when: false
 
+# ----------------------------------------
+# GET CURRENT DHCP SERVER CONFIGURATION
+# ----------------------------------------
+
+- name: Get current DHCP server configuration
+  community.routeros.command:
+    commands:
+      - /ip dhcp-server print detail without-paging
+  register: current_dhcp
+  changed_when: false
+
 # ---------------------------------------
 # GET CURRENT DHCP LEASE CONFIGURATION
 # ---------------------------------------
@@ -66,17 +62,6 @@
   changed_when: false
 
 # --------------------------------
-# GET CURRENT DNS CONFIGURATION
-# --------------------------------
-
-- name: Get current DNS configuration
-  community.routeros.command:
-    commands:
-      - /ip dns print detail without-paging
-  register: current_dns
-  changed_when: false
-
-# --------------------------------
 # GET CURRENT NAT CONFIGURATION
 # --------------------------------
 
@@ -85,6 +70,17 @@
     commands:
       - /ip firewall nat print detail without-paging
   register: current_nat
+  changed_when: false
+
+# --------------------------------
+# GET CURRENT DNS CONFIGURATION
+# --------------------------------
+
+- name: Get current DNS configuration
+  community.routeros.command:
+    commands:
+      - /ip dns print
+  register: current_dns
   changed_when: false
 
 # =====================================================
@@ -130,44 +126,6 @@
     label: "{{ item.interface }}"
 
   when: item.ip_address is defined
-
-# ---------------------
-# VERIFY DHCP SERVER
-# ---------------------
-- name: Verify DHCP server configuration
-  assert:
-    that:
-      - >
-        current_dhcp.stdout[0]
-        is search(
-          'name="' ~ item.dhcp_name ~ '"'
-        )
-
-      - >
-        current_dhcp.stdout[0]
-        is search(
-          'interface=' ~ item.interface
-        )
-
-      - >
-        current_dhcp.stdout[0]
-        is search(
-          'address-pool=' ~ item.dhcp_pool
-        )
-
-    fail_msg: >
-      [VERIFY FAILURE]
-      DHCP server {{ item.dhcp_name }}
-      not found or mismatched.
-
-    success_msg: >
-      [VERIFY SUCCESS]
-      DHCP server {{ item.dhcp_name }}
-      verified.
-
-  loop: "{{ mikrotik_dhcp }}"
-  loop_control:
-    label: "{{ item.dhcp_name }}"
 
 # ----------------------
 # VERIFY DHCP NETWORK
@@ -241,6 +199,44 @@
   loop_control:
     label: "{{ item.dhcp_pool }}"
 
+# ---------------------
+# VERIFY DHCP SERVER
+# ---------------------
+- name: Verify DHCP server configuration
+  assert:
+    that:
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'name="' ~ item.dhcp_name ~ '"'
+        )
+
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'interface=' ~ item.interface
+        )
+
+      - >
+        current_dhcp.stdout[0]
+        is search(
+          'address-pool=' ~ item.dhcp_pool
+        )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DHCP server {{ item.dhcp_name }}
+      not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DHCP server {{ item.dhcp_name }}
+      verified.
+
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
+
 # --------------------
 # VERIFY DHCP LEASE
 # --------------------
@@ -249,16 +245,22 @@
   assert:
     that:
       - >
-        current_lease.stdout[0]
-        is search(
-          'address=' ~ item.ip_address
-        )
+          current_lease.stdout[0]
+          is search(
+            'address=' ~ item.ip_address
+          )
 
       - >
-        current_lease.stdout[0]
-        is search(
-          'mac-address=' ~ item.mac_address
-        )
+          current_lease.stdout[0]
+          is search(
+            'mac-address=' ~ item.mac_address
+          )
+
+      - >
+          current_lease.stdout[0]
+          is search(
+            'server=' ~ item.dhcp_server
+          )
 
     fail_msg: >
       [VERIFY FAILURE]
@@ -273,42 +275,6 @@
   loop: "{{ mikrotik_dhcp_lease }}"
   loop_control:
     label: "{{ item.comment }}"
-
-# ---------------------------
-# VERIFY DNS CONFIGURATION
-# ---------------------------
-
-# -------------------------------------
-# VERIFY DNS CONFIGURATION
-# -------------------------------------
-
-- name: Verify DNS configuration
-  assert:
-    that:
-      - >
-        current_dns.stdout[0]
-        is search(
-          'servers=' ~ (mikrotik_dns.servers | join(','))
-        )
-
-      - >
-        current_dns.stdout[0]
-        is search(
-          'allow-remote-requests=' ~
-          (
-            'yes'
-            if mikrotik_dns.allow_remote_requests
-            else 'no'
-          )
-        )
-
-    fail_msg: >
-      [VERIFY FAILURE]
-      DNS configuration not found or mismatched.
-
-    success_msg: >
-      [VERIFY SUCCESS]
-      DNS configuration verified.
 
 # ----------------
 # VERIFY SRCNAT
@@ -411,6 +377,39 @@
 
   loop_control:
     label: "{{ item.dst_port }}"
+
+# -------------------------------------
+# VERIFY DNS CONFIGURATION
+# -------------------------------------
+
+- name: Verify DNS configuration
+  assert:
+    that:
+      - >
+          current_dns.stdout[0]
+          is search(
+            'servers:\\s*' ~
+            (mikrotik_dns.servers | join(','))
+          )
+
+      - >
+          current_dns.stdout[0]
+          is search(
+            'allow-remote-requests:\\s*' ~
+            (
+              'yes'
+              if mikrotik_dns.allow_remote_requests
+              else 'no'
+            )
+          )
+
+    fail_msg: >
+      [VERIFY FAILURE]
+      DNS configuration not found or mismatched.
+
+    success_msg: >
+      [VERIFY SUCCESS]
+      DNS configuration verified.
 
 # ----------------------------
 # FINAL VERIFICATION RESULT 

@@ -131,7 +131,6 @@
 
         :local existing [/ip firewall nat find
         chain=dstnat
-        protocol=$proto
         dst-port=$dstPort];
 
         :if ([:len $existing] = 0) do={
@@ -147,6 +146,8 @@
         } else={
 
           :if (
+            [/ip firewall nat get $existing protocol] != $proto
+            or
             [/ip firewall nat get $existing to-addresses] != $toAddr
             or
             [/ip firewall nat get $existing to-ports] != $toPort

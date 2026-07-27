@@ -17,12 +17,6 @@ mikrotik_interfaces:
   - interface: bridge-lan
     ip_address: 172.16.16.1/24
 
-  - interface: ether4
-    ip_address: 10.10.10.1/24
-
-  - interface: ether5
-    ip_address: 192.168.10.1/24
-
 
 # -------------------------------------
 # DHCP Configuration
@@ -39,14 +33,6 @@ mikrotik_dhcp:
     dhcp_gateway: 172.16.16.1
     dns_server: 8.8.8.8
 
-  - interface: ether4
-    dhcp_name: dhcp_mikrt
-    dhcp_pool: dhcp_igl
-    dhcp_range: 10.10.10.12-10.10.10.100
-    dhcp_network: 10.10.10.0/24
-    dhcp_gateway: 10.10.10.1
-    dns_server: 8.8.8.8
-
 
 # ---------------------------------
 # DHCP Lease
@@ -54,9 +40,15 @@ mikrotik_dhcp:
 # Konfigurasi static DHCP lease.
 
 mikrotik_dhcp_lease:
-  - ip_address: 172.16.16.20
+  - ip_address: 172.16.16.7
     mac_address: DC:A6:32:E6:13:02
-    comment: Raspberry_ether2
+    dhcp_server: dhcp_IoT
+    comment: Raspberry1
+
+  - ip_address: 172.16.16.8
+    mac_address: 2C:3A:E8:27:92:95
+    dhcp_server: dhcp_IoT
+    comment: ESP1
 
 
 # ---------------------------------------
@@ -72,14 +64,14 @@ mikrotik_nat:
   - chain: dstnat
     protocol: tcp
     dst_port: 5900
-    to_address: 172.16.16.20
+    to_address: 172.16.16.7
     to_port: 5900
     action: dst-nat
 
   - chain: dstnat
     protocol: tcp
     dst_port: 8080
-    to_address: 172.16.16.20
+    to_address: 172.16.16.7
     to_port: 8080
     action: dst-nat
 

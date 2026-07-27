@@ -7,6 +7,8 @@
 # -------------------------------------------------
 # VALIDATE INTERFACE CONFIGURATION
 # -------------------------------------------------
+# Memastikan setiap IP Address interface menggunakan
+# format IP/CIDR yang valid sebelum dilakukan deployment.
 
 - name: Validate interface IP address
   assert:
@@ -23,6 +25,8 @@
 # -------------------------------------------------
 # VALIDATE DHCP NETWORK CONFIGURATION
 # -------------------------------------------------
+# Memastikan DHCP Network menggunakan format subnet
+# (CIDR) yang valid sehingga dapat digunakan RouterOS.
 
 - name: Validate DHCP network
   assert:
@@ -38,6 +42,8 @@
 # -------------------------------------------------
 # VALIDATE DHCP GATEWAY
 # -------------------------------------------------
+# Memastikan alamat gateway DHCP merupakan alamat
+# IP yang valid.
 
 - name: Validate DHCP gateway
   assert:
@@ -52,6 +58,8 @@
 # -------------------------------------------------
 # VALIDATE DHCP DNS SERVER
 # -------------------------------------------------
+# Memastikan DNS Server yang diberikan kepada client
+# DHCP menggunakan format IP Address yang valid.
 
 - name: Validate DHCP DNS server
   assert:
@@ -64,8 +72,27 @@
     label: "{{ item.dhcp_name }}"
 
 # -------------------------------------------------
+# VALIDATE DHCP GATEWAY LOCATION
+# -------------------------------------------------
+# Memastikan gateway berada di dalam subnet DHCP
+# sehingga gateway dapat digunakan oleh seluruh client.
+
+- name: Validate DHCP gateway inside DHCP network
+  assert:
+    that:
+      - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
+    fail_msg: >
+      Gateway {{ item.dhcp_gateway }} NOT inside {{ item.dhcp_network }}
+    success_msg: "Gateway inside network"
+  loop: "{{ mikrotik_dhcp }}"
+  loop_control:
+    label: "{{ item.dhcp_name }}"
+
+# -------------------------------------------------
 # VALIDATE DHCP RANGE FORMAT
 # -------------------------------------------------
+# Memastikan rentang IP DHCP menggunakan format
+# StartIP-EndIP yang benar.
 
 - name: Validate DHCP range
   assert:
@@ -80,23 +107,10 @@
     label: "{{ item.dhcp_name }}"
 
 # -------------------------------------------------
-# VALIDATE DHCP GATEWAY LOCATION
-# -------------------------------------------------
-
-- name: Validate DHCP gateway inside DHCP network
-  assert:
-    that:
-      - item.dhcp_gateway | ansible.utils.ipaddr(item.dhcp_network)
-    fail_msg: >
-      Gateway {{ item.dhcp_gateway }} NOT inside {{ item.dhcp_network }}
-    success_msg: "Gateway inside network"
-  loop: "{{ mikrotik_dhcp }}"
-  loop_control:
-    label: "{{ item.dhcp_name }}"
-
-# -------------------------------------------------
 # VALIDATE DHCP RANGE LOCATION
 # -------------------------------------------------
+# Memastikan seluruh alamat IP pada DHCP Pool
+# berada di dalam subnet DHCP yang digunakan.
 
 - name: Validate DHCP range inside network
   assert:
@@ -113,6 +127,8 @@
 # -------------------------------------------------
 # VALIDATE DHCP RANGE ORDER
 # -------------------------------------------------
+# Memastikan IP awal DHCP Pool lebih kecil daripada
+# IP akhir agar rentang alamat valid.
 
 - name: Validate DHCP range order (start < end)
   assert:
@@ -131,6 +147,8 @@
 # -------------------------------------------------
 # VALIDATE DHCP LEASE IP
 # -------------------------------------------------
+# Memastikan alamat IP Static DHCP Lease
+# menggunakan format IP yang valid.
 
 - name: Validate DHCP lease IP
   assert:
@@ -144,29 +162,10 @@
     label: "{{ item.comment }}"
 
 # -------------------------------------------------
-# VALIDATE DHCP LEASE LOCATION
-# -------------------------------------------------
-
-- name: Validate lease inside DHCP network
-  assert:
-    that:
-      - >
-        item.ip_address
-        | ansible.utils.ipaddr(
-            mikrotik_dhcp[0].dhcp_network
-          )
-    fail_msg: >
-      Lease {{ item.ip_address }}
-      NOT inside DHCP network {{ mikrotik_dhcp[0].dhcp_network }}
-    success_msg: "Lease inside DHCP network"
-
-  loop: "{{ mikrotik_dhcp_lease }}"
-  loop_control:
-    label: "{{ item.comment }}"
-
-# -------------------------------------------------
 # VALIDATE DHCP LEASE MAC
 # -------------------------------------------------
+# Memastikan MAC Address pada Static DHCP Lease
+# menggunakan format yang benar.
 
 - name: Validate DHCP lease MAC
   assert:
@@ -182,60 +181,65 @@
     label: "{{ item.comment }}"
 
 # -------------------------------------------------
-# VALIDATE DHCP LEASE COMMENT
+# VALIDATE DHCP LEASE SERVER
 # -------------------------------------------------
+# Memastikan DHCP Server yang digunakan oleh
+# Static DHCP Lease benar-benar tersedia.
 
-- name: Validate DHCP lease comment
+- name: Validate DHCP lease server
   assert:
     that:
-      - item.comment | length > 0
-    fail_msg: "Lease comment cannot be empty"
-    success_msg: "Lease comment valid"
+      - item.dhcp_server in (
+          mikrotik_dhcp
+          | map(attribute='dhcp_name')
+          | list
+        )
+    fail_msg: >
+      DHCP Server {{ item.dhcp_server }} not found
+    success_msg: >
+      DHCP Server valid
 
   loop: "{{ mikrotik_dhcp_lease }}"
+
   loop_control:
     label: "{{ item.comment }}"
 
 # -------------------------------------------------
-# VALIDATE GLOBAL DNS CONFIGURATION
+# VALIDATE DHCP LEASE LOCATION
 # -------------------------------------------------
+# Memastikan alamat IP Static DHCP Lease berada
+# pada subnet DHCP Server yang dipilih.
 
-- name: Validate DNS servers list
+- name: Validate lease inside DHCP network
   assert:
     that:
-      - mikrotik_dns.servers is iterable
-      - mikrotik_dns.servers | length > 0
-    fail_msg: "DNS servers list is empty or invalid"
-    success_msg: "DNS servers list valid"
+      - >
+        item.ip_address
+        | ansible.utils.ipaddr(
+            (
+              mikrotik_dhcp
+              | selectattr('dhcp_name', 'equalto', item.dhcp_server)
+              | first
+            ).dhcp_network
+          )
 
-# -------------------------------------------------
-# VALIDATE EACH DNS SERVER
-# -------------------------------------------------
+    fail_msg: >
+      Lease {{ item.ip_address }}
+      NOT inside DHCP network of {{ item.dhcp_server }}
 
-- name: Validate each DNS server IP
-  assert:
-    that:
-      - item | ansible.utils.ipaddr
-    fail_msg: "Invalid DNS server: {{ item }}"
-    success_msg: "DNS server valid: {{ item }}"
-  loop: "{{ mikrotik_dns.servers }}"
+    success_msg: >
+      Lease inside DHCP network
+
+  loop: "{{ mikrotik_dhcp_lease }}"
+
   loop_control:
-    label: "{{ item }}"
-
-# -------------------------------------------------
-# VALIDATE DNS REMOTE REQUEST OPTION
-# -------------------------------------------------
-
-- name: Validate DNS remote request option
-  assert:
-    that:
-      - mikrotik_dns.allow_remote_requests is boolean
-    fail_msg: "allow_remote_requests must be true/false"
-    success_msg: "allow_remote_requests valid"
+    label: "{{ item.comment }}"
 
 # -------------------------------------------------
 # VALIDATE SRCNAT STRUCTURE
 # -------------------------------------------------
+# Memastikan setiap rule SRCNAT memiliki parameter
+# wajib sebelum dilakukan deployment.
 
 - name: Validate srcnat structure
   assert:
@@ -258,6 +262,8 @@
 # -------------------------------------------------
 # VALIDATE SRCNAT INTERFACE
 # -------------------------------------------------
+# Memastikan interface yang digunakan oleh SRCNAT
+# tersedia pada konfigurasi interface.
 
 - name: Validate srcnat interface
   assert:
@@ -284,6 +290,8 @@
 # -------------------------------------------------
 # VALIDATE DSTNAT STRUCTURE
 # -------------------------------------------------
+# Memastikan setiap rule DSTNAT memiliki parameter
+# yang diperlukan sebelum deployment.
 
 - name: Validate dstnat structure
   assert:
@@ -309,6 +317,9 @@
 # -------------------------------------------------
 # VALIDATE DSTNAT PROTOCOL
 # -------------------------------------------------
+# Memastikan protocol DSTNAT menggunakan TCP atau UDP
+# karena implementasi deployment ini hanya mendukung
+# port forwarding berbasis port.
 
 - name: Validate dstnat protocol
   assert:
@@ -331,6 +342,8 @@
 # -------------------------------------------------
 # VALIDATE DSTNAT TARGET IP
 # -------------------------------------------------
+# Memastikan alamat IP tujuan DSTNAT merupakan
+# alamat IP yang valid.
 
 - name: Validate dstnat target IP
   assert:
@@ -353,6 +366,8 @@
 # -------------------------------------------------
 # VALIDATE DSTNAT PORT
 # -------------------------------------------------
+# Memastikan nomor port berada pada rentang
+# 1 sampai 65535.
 
 - name: Validate dstnat port
   assert:
@@ -376,8 +391,54 @@
     label: "{{ item.dst_port }}"
 
 # -------------------------------------------------
-# FINAL VALIDATION RESULT
+# VALIDATE GLOBAL DNS CONFIGURATION
 # -------------------------------------------------
+# Memastikan konfigurasi DNS global memiliki
+# daftar DNS Server yang dapat digunakan.
+
+- name: Validate DNS servers list
+  assert:
+    that:
+      - mikrotik_dns.servers is iterable
+      - mikrotik_dns.servers | length > 0
+    fail_msg: "DNS servers list is empty or invalid"
+    success_msg: "DNS servers list valid"
+
+# -------------------------------------------------
+# VALIDATE EACH DNS SERVER
+# -------------------------------------------------
+# Memastikan setiap DNS Server menggunakan
+# format IP Address yang valid.
+
+- name: Validate each DNS server IP
+  assert:
+    that:
+      - item | ansible.utils.ipaddr
+    fail_msg: "Invalid DNS server: {{ item }}"
+    success_msg: "DNS server valid: {{ item }}"
+  loop: "{{ mikrotik_dns.servers }}"
+  loop_control:
+    label: "{{ item }}"
+
+# -------------------------------------------------
+# VALIDATE DNS REMOTE REQUEST OPTION
+# -------------------------------------------------
+# Memastikan nilai allow_remote_requests
+# menggunakan tipe boolean.
+
+- name: Validate DNS remote request option
+  assert:
+    that:
+      - mikrotik_dns.allow_remote_requests is boolean
+    fail_msg: "allow_remote_requests must be true/false"
+    success_msg: "allow_remote_requests valid"
+
+
+# --------------------------------------------------
+# VALIDATION SUCCESS
+# --------------------------------------------------
+# Seluruh konfigurasi dinyatakan valid sehingga
+# proses deployment dapat dilanjutkan.
 
 - name: Validation success
   debug:

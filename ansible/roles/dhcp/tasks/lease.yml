@@ -7,6 +7,7 @@
 # --------------------------------------
 # GET CURRENT DHCP LEASES
 # --------------------------------------
+# Menyimpan daftar DHCP Lease yang saat ini aktif pada MikroTik.
 
 - name: Get current DHCP leases
   community.routeros.command:
@@ -19,6 +20,8 @@
 # --------------------------------------
 # ADD OR UPDATE DHCP LEASE
 # --------------------------------------
+# Menambahkan DHCP Lease baru atau memperbarui alamat IP,
+# DHCP Server, dan komentar berdasarkan MAC Address perangkat.
 
 - name: Add or Update DHCP lease
   community.routeros.command:
@@ -27,12 +30,14 @@
         :local leaseIP "{{ item.ip_address }}";
         :local leaseMAC "{{ item.mac_address }}";
         :local leaseComment "{{ item.comment }}";
+        :local leaseServer "{{ item.dhcp_server }}";
 
         :if ([:len [/ip dhcp-server lease find mac-address=$leaseMAC]] = 0) do={
 
           /ip dhcp-server lease add \
           address=$leaseIP \
           mac-address=$leaseMAC \
+          server=$leaseServer \
           comment=$leaseComment;
 
         } else={
@@ -41,11 +46,14 @@
             [/ip dhcp-server lease get [find mac-address=$leaseMAC] address] != $leaseIP
             or
             [/ip dhcp-server lease get [find mac-address=$leaseMAC] comment] != $leaseComment
+            or
+            [/ip dhcp-server lease get [find mac-address=$leaseMAC] server] != $leaseServer
           ) do={
 
             /ip dhcp-server lease set \
             [find mac-address=$leaseMAC] \
             address=$leaseIP \
+            server=$leaseServer \
             comment=$leaseComment;
 
           }
