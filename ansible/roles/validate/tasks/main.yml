@@ -4,9 +4,9 @@
 # VALIDATE CONFIGURATION
 # =================================
 
-# -------------------------------------------------
+# --------------------------------------------------
 # VALIDATE INTERFACE CONFIGURATION
-# -------------------------------------------------
+# --------------------------------------------------
 # Memastikan setiap IP Address interface menggunakan
 # format IP/CIDR yang valid sebelum dilakukan deployment.
 
@@ -22,9 +22,9 @@
     label: "{{ item.interface }}"
   when: item.ip_address is defined
 
-# -------------------------------------------------
+# --------------------------------------------------
 # VALIDATE DHCP NETWORK CONFIGURATION
-# -------------------------------------------------
+# --------------------------------------------------
 # Memastikan DHCP Network menggunakan format subnet
 # (CIDR) yang valid sehingga dapat digunakan RouterOS.
 
@@ -390,9 +390,9 @@
   loop_control:
     label: "{{ item.dst_port }}"
 
-# -------------------------------------------------
-# VALIDATE GLOBAL DNS CONFIGURATION
-# -------------------------------------------------
+# ---------------------------------------------
+# VALIDATE DNS SERVER LIST
+# ---------------------------------------------
 # Memastikan konfigurasi DNS global memiliki
 # daftar DNS Server yang dapat digunakan.
 
@@ -404,9 +404,9 @@
     fail_msg: "DNS servers list is empty or invalid"
     success_msg: "DNS servers list valid"
 
-# -------------------------------------------------
+# ----------------------------------------------
 # VALIDATE EACH DNS SERVER
-# -------------------------------------------------
+# ----------------------------------------------
 # Memastikan setiap DNS Server menggunakan
 # format IP Address yang valid.
 
@@ -433,6 +433,35 @@
     fail_msg: "allow_remote_requests must be true/false"
     success_msg: "allow_remote_requests valid"
 
+# -------------------------------------------------
+# VALIDATE DNS STATIC HOSTNAME
+# -------------------------------------------------
+# Memastikan setiap DNS Static memiliki hostname.
+
+- name: Validate DNS Static hostname
+  assert:
+    that:
+      - item.name | length > 0
+    fail_msg: "DNS Static hostname cannot be empty"
+    success_msg: "DNS Static hostname valid: {{ item.name }}"
+  loop: "{{ mikrotik_dns_static | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# --------------------------------------------------
+# VALIDATE DNS STATIC ADDRESS
+# --------------------------------------------------
+# Memastikan alamat IP DNS Static valid.
+
+- name: Validate DNS Static address
+  assert:
+    that:
+      - item.address | ansible.utils.ipaddr
+    fail_msg: "Invalid DNS Static address: {{ item.address }}"
+    success_msg: "DNS Static address valid: {{ item.address }}"
+  loop: "{{ mikrotik_dns_static | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 # --------------------------------------------------
 # VALIDATION SUCCESS

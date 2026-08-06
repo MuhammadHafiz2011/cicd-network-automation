@@ -37,3 +37,99 @@
       (current_dns.stdout[0] | replace(' ', ''))
       is not search("allow-remote-requests=" ~ ('yes' if mikrotik_dns.allow_remote_requests else 'no'))
     )
+
+
+# ===========================
+# DNS STATIC CONFIGURATION
+# ===========================
+
+# --------------------------------
+# GET CURRENT DNS STATIC
+# --------------------------------
+# Mengambil seluruh DNS Static yang saat ini terkonfigurasi pada MikroTik.
+
+- name: Get current DNS Static
+  community.routeros.command:
+    commands:
+      - /ip dns static print detail without-paging
+  register: current_dns_static
+  changed_when: false
+
+# ----------------------------
+# BUILD EXISTING DNS STATIC
+# ----------------------------
+# Menyusun daftar DNS Static yang saat ini ada pada MikroTik sebagai data pembanding.
+
+- name: Build existing DNS Static
+  set_fact:
+    existing_dns_static: >-
+      {{
+        current_dns_static.stdout[0]
+        | regex_findall('name="([^"]+)".*?address=([^ ]+)')
+      }}
+
+# ---------------------------
+# BUILD DESIRED DNS STATIC
+# ---------------------------
+# Menyusun daftar DNS Static berdasarkan inventory yang akan dijadikan konfigurasi tujuan.
+
+- name: Build desired DNS Static
+  set_fact:
+    desired_dns_static: >-
+      {{
+        mikrotik_dns_static
+        | map(attribute='name')
+        | zip(
+            mikrotik_dns_static
+            | map(attribute='address')
+          )
+        | list
+      }}
+
+# ---------------------------
+# REMOVE UNUSED DNS STATIC
+# ---------------------------
+# Menghapus DNS Static yang ada pada MikroTik tetapi tidak terdapat pada pada inventory.
+
+- name: Remove unused DNS Static
+  community.routeros.command:
+    commands:
+      - >
+        /ip dns static remove
+        [find name="{{ item.0 }}"];
+  loop: "{{ existing_dns_static }}"
+  when: item not in desired_dns_static
+  loop_control:
+    label: "{{ item.0 }}"
+
+# ---------------------------
+# ADD OR UPDATE DNS STATIC
+# ---------------------------
+# Menambahkan DNS Static baru atau memperbarui alamat IP berdasarkan hostname yang terdapat pada inventory.
+- name: Add or Update DNS Static
+  community.routeros.command:
+    commands:
+      - >
+        :local dnsName "{{ item.name }}";
+        :local dnsAddress "{{ item.address }}";
+
+        :if ([len [/ip dns static find name=$dnsName]] = 0) do={
+
+            /ip dns static add \
+            name=$dnsName \
+            address=$dnsAddress;
+
+        } else={
+
+            :if (
+                [/ip dns static get [find name=$dnsName] address] != $dnsAddress
+            ) do={
+
+                /ip dns static set \
+                [find name=$dnsName] \
+                address=$dnsAddress;
+            }
+        }
+  loop: "{{ mikrotik_dns_static }}"
+  loop_control:
+    label: "{{ item.name }}"

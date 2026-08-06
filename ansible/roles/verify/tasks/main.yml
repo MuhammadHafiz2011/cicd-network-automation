@@ -83,6 +83,18 @@
   register: current_dns
   changed_when: false
 
+# -------------------------
+# GET CURRENT DNS STATIC
+# -------------------------
+
+- name: Get current DNS Static
+  community.routeros.command:
+    commands:
+      - /ip dns static print detail without-paging
+  register: current_dns_static
+  changed_when: false
+
+
 # =====================================================
 # VERIFY DEPLOYED CONFIGURATION
 # Membandingkan konfigurasi yang telah dideploy dengan
@@ -410,6 +422,36 @@
     success_msg: >
       [VERIFY SUCCESS]
       DNS configuration verified.
+
+# --------------------
+# VERIFY DNS STATIC
+# --------------------
+
+- name: Verify DNS Static
+  assert:
+    that:
+      - >
+        current_dns_static.stdout[0]
+        is search(
+          'name="' ~ item.name ~ '"'
+        )
+
+      - >
+        current_dns_static.stdout[0]
+        is search(
+          'address=' ~ item.address
+        )
+
+    fail_msg: |
+      [VERIFY FAILURE]
+      DNS Static '{{ item.name }}' does not match the expected configuration.
+    success_msg: |
+      [VERIFY SUCCESS]
+      DNS Static '{{ item.name }}' verified.
+
+  loop: "{{ mikrotik_dns_static | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 # ----------------------------
 # FINAL VERIFICATION RESULT 
