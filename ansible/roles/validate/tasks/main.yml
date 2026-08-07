@@ -296,6 +296,7 @@
 - name: Validate dstnat structure
   assert:
     that:
+      - item.in_interface is defined
       - item.protocol is defined
       - item.dst_port is defined
       - item.to_address is defined
@@ -303,6 +304,34 @@
       - item.action is defined
     fail_msg: "Invalid DSTNAT rule: {{ item }}"
     success_msg: "DSTNAT structure valid"
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
+
+# -------------------------------------------------
+# VALIDATE DSTNAT INTERFACE
+# -------------------------------------------------
+# Memastikan interface yang digunakan oleh DSTNAT
+# tersedia pada konfigurasi interface.
+
+- name: Validate dstnat interface
+  assert:
+    that:
+      - item.in_interface in (
+          mikrotik_interfaces
+          | map(attribute='interface')
+          | list
+        )
+    fail_msg: >
+      Interface {{ item.in_interface }} not found
+    success_msg: "DSTNAT interface valid"
 
   loop: >-
     {{

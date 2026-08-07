@@ -128,6 +128,7 @@
         :local toAddr "{{ item.to_address }}";
         :local toPort "{{ item.to_port }}";
         :local natAction "{{ item.action }}";
+        :local inIface "{{ item.in_interface | default('') }}";
 
         :local existing [/ip firewall nat find
         chain=dstnat
@@ -137,6 +138,7 @@
 
           /ip firewall nat add
           chain=dstnat
+          in-interface=$inIface
           protocol=$proto
           dst-port=$dstPort
           action=$natAction
@@ -153,12 +155,15 @@
             [/ip firewall nat get $existing to-ports] != $toPort
             or
             [/ip firewall nat get $existing action] != $natAction
+            or
+            [/ip firewall nat get $existing in-interface] != $inIface
           ) do={
 
             /ip firewall nat remove $existing;
 
             /ip firewall nat add
             chain=dstnat
+            in-interface=$inIface
             protocol=$proto
             dst-port=$dstPort
             action=$natAction

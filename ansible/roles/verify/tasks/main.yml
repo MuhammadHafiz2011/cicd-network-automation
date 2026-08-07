@@ -333,6 +333,30 @@
   loop_control:
     label: "{{ item.out_interface }}"
 
+# -------------------------
+# GET CURRENT DSTNAT RULE
+# Mengambil rule DSTNAT berdasarkan dst-port agar
+# setiap rule diverifikasi secara independen dan
+# menghindari false positive pada beberapa rule DSTNAT.
+# -------------------------
+
+- name: Get current DSTNAT rule
+  community.routeros.command:
+    commands:
+      - /ip firewall nat print detail where dst-port="{{ item.dst_port }}"
+  register: current_dstnat
+  changed_when: false
+
+  loop: >-
+    {{
+      mikrotik_nat
+      | selectattr('chain', 'equalto', 'dstnat')
+      | list
+    }}
+
+  loop_control:
+    label: "{{ item.dst_port }}"
+
 # ----------------
 # VERIFY DSTNAT
 # ----------------
@@ -340,42 +364,73 @@
 - name: Verify DSTNAT configuration
   assert:
     that:
-      - >
-        current_nat.stdout[0]
-        is search(
-          'protocol=' ~ item.protocol
-        )
 
       - >
-        current_nat.stdout[0]
-        is search(
-          'dst-port=' ~ (item.dst_port | string)
-        )
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'protocol=' ~ item.protocol
+          )
 
       - >
-        current_nat.stdout[0]
-        is search(
-          'to-addresses=' ~ item.to_address
-        )
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'dst-port=' ~ (item.dst_port | string)
+          )
 
       - >
-        current_nat.stdout[0]
-        is search(
-          'to-ports=' ~ (item.to_port | string)
-        )
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'in-interface=' ~ item.in_interface
+          )
 
       - >
-        current_nat.stdout[0]
-        is search(
-          'action=' ~ item.action
-        )
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'to-addresses=' ~ item.to_address
+          )
 
-    fail_msg: >
+      - >
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'to-ports=' ~ (item.to_port | string)
+          )
+
+      - >
+          (
+            current_dstnat.results
+            | selectattr('item.dst_port', 'equalto', item.dst_port)
+            | first
+          ).stdout[0]
+          is search(
+            'action=' ~ item.action
+          )
+
+    fail_msg: >-
       [VERIFY FAILURE]
       DSTNAT {{ item.dst_port }}
-      not found or mismatched.
+      not found or mismatched
 
-    success_msg: >
+    success_msg: >-
       [VERIFY SUCCESS]
       DSTNAT {{ item.dst_port }}
       verified.
