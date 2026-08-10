@@ -40,12 +40,12 @@ mikrotik_dhcp:
 # Konfigurasi static DHCP lease.
 
 mikrotik_dhcp_lease:
-  - ip_address: 10.10.10.7
+  - ip_address: 10.10.10.8
     mac_address: DC:A6:32:E6:13:02
     dhcp_server: dhcp_IoT
     comment: Raspberry1
 
-  - ip_address: 10.10.10.6
+  - ip_address: 10.10.10.9
     mac_address: 2C:3A:E8:27:92:95
     dhcp_server: dhcp_IoT
     comment: ESP1
