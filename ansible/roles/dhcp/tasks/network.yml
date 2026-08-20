@@ -43,9 +43,9 @@
   loop_control:
     label: "{{ item }}"
 
-# -----------------------------------------
-# UPDATE DHCP NETWORK IF CONFIG MISMATCH
-# -----------------------------------------
+# ----------------------
+# UPDATE DHCP NETWORK 
+# ----------------------
 # Memperbarui gateway atau DNS Server apabila konfigurasi DHCP Network berbeda.
 
 - name: Update DHCP network
@@ -72,9 +72,9 @@
   loop_control:
     label: "{{ item.dhcp_network }}"
 
-# --------------------------------
-# ADD DHCP NETWORK IF NOT EXIST 
-# --------------------------------
+# -------------------
+# ADD DHCP NETWORK  
+# -------------------
 # Menambahkan DHCP Network baru apabila subnet belum terdapat pada MikroTik.
 
 - name: Add DHCP network
