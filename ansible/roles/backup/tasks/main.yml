@@ -6,23 +6,23 @@
 # -----------------------------
 # GENERATE BACKUP IDENTIFIER
 # -----------------------------
+# Membuat nama backup unik berdasarkan hostname dan waktu pembuatan.
 
 - name: Create timestamp
-# Membuat timestamp sebagai identitas unik untuk file backup.
   set_fact:
     backup_time: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
 
-- name: Set backup filename
 # Menyusun nama file backup berdasarkan hostname dan timestamp.
+- name: Set backup filename
   set_fact:
     backup_name: "{{ inventory_hostname }}-{{ backup_time }}"
 
 # ---------------------------------
 # PREPARE LOCAL BACKUP DIRECTORY
 # ---------------------------------
+# Memastikan direktori penyimpanan backup tersedia pada CI/CD Controller.
 
 - name: Ensure local backup directory exists
-# Membuat direktori backup pada CI/CD Controller apabila belum tersedia.
   delegate_to: localhost
   file:
     path: "{{ playbook_dir }}/../backups"
@@ -32,16 +32,17 @@
 # -----------------------------------
 # CREATE BACKUP ON MIKROTIK DEVICE
 # -----------------------------------
+# Membuat file backup konfigurasi pada perangkat MikroTik.
 
 - name: Create router backup
   community.routeros.command:
-# Membuat file backup biner pada perangkat MikroTik.
     commands:
       - "/system backup save name={{ backup_name }}"
 
 # -----------------------------------------
 # WAIT FOR ROUTER TO FINISH WRITING FILE
 # -----------------------------------------
+# Menunggu MikroTik menyelesaikan proses pembuatan file backup.
 
 - name: Wait for file creation
   pause:
@@ -50,10 +51,10 @@
 # -----------------------------------
 # DOWNLOAD BACKUP FILE FROM ROUTER
 # -----------------------------------
+# Mengunduh file backup dari MikroTik ke CI/CD Controller.
 
 - name: Download binary backup
   ansible.netcommon.net_get:
-# Mengunduh file backup dari MikroTik ke direktori backup pada CI/CD COntroller.
     src: "{{ backup_name }}.backup"
     dest: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
 
@@ -65,17 +66,17 @@
 # ------------------------------------
 # VERIFY BACKUP FILE EXISTS LOCALLY
 # ------------------------------------
+# Memastikan file backup berhasil tersimpan pada CI/CD Controller.
 
 - name: Verify backup file exists
   delegate_to: localhost
-# Memastikan file backup berhasil tersimpan pada CI/CD Controller.
   stat:
     path: "{{ playbook_dir }}/../backups/{{ backup_name }}.backup"
 
   register: backup_file
 
-- name: Validate backup success
 # Memvalidasi keberhasilan proses backup.
+- name: Validate backup success
   assert:
     that:
       - backup_file.stat.exists

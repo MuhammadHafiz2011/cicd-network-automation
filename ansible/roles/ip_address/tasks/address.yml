@@ -7,19 +7,18 @@
 # -------------------------------
 # GET CURRENT IP CONFIGURATION
 # -------------------------------
-
+# Mengambil konfigurasi IP Address saat ini sebagai kondisi aktual MikroTik.
 - name: Get current IP configuration
   community.routeros.command:
     commands:
       - /ip address export terse
-# Menyimpan konfigurasi IP Address statis yang sedang aktif pada MikroTik.
   register: current_ip
   changed_when: false
 
 # ---------------------------
 # ADD OR UPDATE IP ADDRESS
 # ---------------------------
-# Menambahkan IP baru atau memperbarui interface apabila konfigurasi berbeda.
+# Menambahkan IP baru atau memperbarui interface jika konfigurasi berbeda.
 
 - name: Add or Update IP address
   community.routeros.command:
@@ -63,7 +62,7 @@
 # -----------------------------------
 # REFRESH CURRENT IP CONFIGURATION
 # -----------------------------------
-# Memperbarui state IP Address setelah proses Add/Update agar proses Build Existing menggunakan konfigurasi terbaru.
+# Mengambil ulang konfigurasi IP setelah proses Add/Update agar data yang digunakan tetap terbaru.
 
 - name: Refresh current IP configuration
   community.routeros.command:
@@ -88,7 +87,7 @@
 # -----------------------------------------------------
 # BUILD DESIRED IP LIST
 # -----------------------------------------------------
-# Menyusun daftar IP Address berdasarkan konfigurasi pada inventory.
+# Menyusun daftar IP Address yang diinginkan berdasarkan inventory.
 
 - name: Build desired IP list
   set_fact:
@@ -103,7 +102,7 @@
 # ---------------------------
 # REMOVE UNUSED IP ADDRESS
 # ---------------------------
-# Menghapus IP Address yang tidak lagi terdapat pada inventory.
+# Menghapus IP Address yang tidak terdapat dalam konfigurasi inventory.
 
 - name: Remove unused IP address
   community.routeros.command:

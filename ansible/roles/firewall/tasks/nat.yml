@@ -6,12 +6,12 @@
 # ------------------------
 # GET CURRENT NAT RULES
 # ------------------------
+# Mengambil konfigurasi NAT saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current NAT rule
   community.routeros.command:
     commands:
       - /ip firewall nat print detail without-paging
-# Menyimpan konfigurasi Firewall NAT yang sedang aktif pada MikroTik.
   register: current_nat
   changed_when: false
 
@@ -19,10 +19,10 @@
 # =======================
 # SRCNAT CONFIGURATION
 # =======================
+# Menyinkronkan rule SRCNAT agar sesuai dengan konfigurasi yang ditentukan.
 
 - name: Add or Update SRCNAT rule
   community.routeros.command:
-# Membuat atau memperbarui rule SRCNAT sesuai konfigurasi yang ditentukan.
     commands:
       - >
         :local iface "{{ item.out_interface }}";
@@ -72,9 +72,9 @@
 # ----------------------------------
 # BUILD EXISTING DSTNAT PORT LIST
 # ----------------------------------
+# Menyusun daftar destination port dari rule DSTNAT yang terdapat pada MikroTik.
 
 - name: Build existing dstnat ports
-# Menyusun daftar port DSTNAT yang sedang aktif pada MikroTik.
   set_fact:
     existing_dstnat_ports: >-
       {{
@@ -87,9 +87,9 @@
 # ---------------------------------
 # BUILD DESIRED DSTNAT PORT LIST
 # ---------------------------------
+# Menyusun daftar destination port DSTNAT yang diinginkan berdasarkan inventory.
 
 - name: Build desired dstnat ports
-# Menyusun daftar port DSTNAT berdasarkan konfigurasi yang ditentukan.
   set_fact:
     desired_dstnat_ports: >-
       {{
@@ -103,10 +103,10 @@
 # -----------------------------
 # REMOVE UNUSED DSTNAT RULES 
 # -----------------------------
+# Menghapus rule DSTNAT dengan destination port yang tidak terdapat dalam inventory.
 
 - name: Remove unused dstnat rule
   community.routeros.command:
-# MEnghapus rule DSTNAT yang sudah tidak digunakan.
     commands:
       - >
         /ip firewall nat remove
@@ -115,12 +115,13 @@
   loop_control:
     label: "{{ item }}"
 
-# ----------------
-# ADD or UPDATE
-# ----------------
+# ----------------------------
+# ADD or UPDATE DSTNAT RULE
+# ----------------------------
+# Menambahkan rule DSTNAT baru atau membuat ulang rule jika parameter konfigurasi berbeda.
+
 - name: Add or Update DSTNAT rule
   community.routeros.command:
-# Menambahkan atau memperbarui rule DSTNAT sesuai konfigurasi.
     commands:
       - >
         :local proto "{{ item.protocol }}";

@@ -6,18 +6,19 @@
 # --------------------------------
 # GET CURRENT DNS CONFIGURATION
 # --------------------------------
+# Mengambil konfigurasi DNS saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DNS configuration
   community.routeros.command:
     commands:
       - /ip dns print detail without-paging
-# Menyimpan konfigurasi DNS yang sedang aktif pada MikroTik.
   register: current_dns
   changed_when: false
 
 # ---------------------------
 # UPDATE DNS cONFIGURATION
 # ---------------------------
+# Memperbarui DNS Server atau allow-remote-requests jika konfigurasi berbeda.
 
 - name: Update DNS configuration
   community.routeros.command:
@@ -26,7 +27,6 @@
         /ip dns set
         servers={{ mikrotik_dns.servers | join(',') }}
         allow-remote-requests={{ 'yes' if mikrotik_dns.allow_remote_requests else 'no' }}
-# Memperbarui DNS Server atau allow-remote-requests apabila konfigurasi berbeda dengan inventory.
   when: >
     (
       (current_dns.stdout[0] | replace(' ', ''))
@@ -46,7 +46,7 @@
 # --------------------------------
 # GET CURRENT DNS STATIC
 # --------------------------------
-# Mengambil seluruh DNS Static yang saat ini terkonfigurasi pada MikroTik.
+# Mengambil DNS Static saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DNS Static
   community.routeros.command:
@@ -58,7 +58,7 @@
 # ----------------------------
 # BUILD EXISTING DNS STATIC
 # ----------------------------
-# Menyusun daftar DNS Static yang saat ini ada pada MikroTik sebagai data pembanding.
+# Menyusun daftar DNS Static yang saat ini terdapat pada MikroTik.
 
 - name: Build existing DNS Static
   set_fact:
@@ -71,7 +71,7 @@
 # ---------------------------
 # BUILD DESIRED DNS STATIC
 # ---------------------------
-# Menyusun daftar DNS Static berdasarkan inventory yang akan dijadikan konfigurasi tujuan.
+# Menyusun daftar DNS Static yang diinginkan berdasarkan inventory.
 
 - name: Build desired DNS Static
   set_fact:
@@ -89,7 +89,7 @@
 # ---------------------------
 # REMOVE UNUSED DNS STATIC
 # ---------------------------
-# Menghapus DNS Static yang ada pada MikroTik tetapi tidak terdapat pada pada inventory.
+# Menghapus DNS Static yang tidak lagi terdapat dalam inventory.
 
 - name: Remove unused DNS Static
   community.routeros.command:
@@ -105,7 +105,8 @@
 # ---------------------------
 # ADD OR UPDATE DNS STATIC
 # ---------------------------
-# Menambahkan DNS Static baru atau memperbarui alamat IP berdasarkan hostname yang terdapat pada inventory.
+# Menambahkan DNS Static baru atau memperbarui address jika konfigurasi berbeda.
+
 - name: Add or Update DNS Static
   community.routeros.command:
     commands:

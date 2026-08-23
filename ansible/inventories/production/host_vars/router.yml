@@ -15,7 +15,7 @@ mikrotik_interfaces:
     dhcp: true
 
   - interface: ether2
-    ip_address: 10.10.10.1/24
+    ip_address: 172.16.16.1/24
 
 
 # -------------------------------------
@@ -28,9 +28,9 @@ mikrotik_dhcp:
   - interface: ether2
     dhcp_name: dhcp_IoT
     dhcp_pool: dhcp_RaspberryPi
-    dhcp_range: 10.10.10.5-10.10.10.10
-    dhcp_network: 10.10.10.0/24
-    dhcp_gateway: 10.10.10.1
+    dhcp_range: 172.16.16.5-172.16.16.10
+    dhcp_network: 172.16.16.0/24
+    dhcp_gateway: 172.16.16.1
     dns_server: 8.8.8.8
 
 
@@ -40,12 +40,12 @@ mikrotik_dhcp:
 # Konfigurasi static DHCP lease.
 
 mikrotik_dhcp_lease:
-  - ip_address: 10.10.10.9
+  - ip_address: 172.16.16.5
     mac_address: DC:A6:32:E6:13:02
     dhcp_server: dhcp_IoT
     comment: Raspberry1
 
-  - ip_address: 10.10.10.6
+  - ip_address: 172.16.16.6
     mac_address: 2C:3A:E8:27:92:95
     dhcp_server: dhcp_IoT
     comment: ESP1
@@ -65,7 +65,7 @@ mikrotik_nat:
     in_interface: wlan1
     protocol: tcp
     dst_port: 5900
-    to_address: 10.10.10.9
+    to_address: 172.16.16.5
     to_port: 5900
     action: dst-nat
 
@@ -73,7 +73,7 @@ mikrotik_nat:
     in_interface: wlan1
     protocol: tcp
     dst_port: 8000
-    to_address: 10.10.10.9
+    to_address: 172.16.16.5
     to_port: 8000
     action: dst-nat
 
@@ -91,4 +91,4 @@ mikrotik_dns:
 
 mikrotik_dns_static:
     - name: edge.iot
-      address: 10.10.10.9
+      address: 172.16.16.5

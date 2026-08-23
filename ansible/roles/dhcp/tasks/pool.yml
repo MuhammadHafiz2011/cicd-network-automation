@@ -7,12 +7,12 @@
 # --------------------------------------
 # GET CURRENT DHCP POOLS
 # --------------------------------------
+# Mengambil konfigurasi DHCP Pool saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DHCP pools
   community.routeros.command:
     commands:
       - /ip pool print detail without-paging
-# Menyimpan daftar DHCP Pool yang sedang aktif pada MikroTik.
   register: current_pool
   changed_when: false
 
@@ -41,9 +41,9 @@
     label: "Syncing Pool: {{ item.dhcp_pool }}"
 
 # --------------------------------------
-# REFRESH STATE
+# REFRESH DHCP STATE
 # --------------------------------------
-# Memperbarui state DHCP Pool setelah proses Add/Update agar task berikutnya menggunakan konfigurasi terbaru.
+# Mengambil ulang konfigurasi DHCP Pool setelah proses Add/Update agar data tetap terbaru.
 
 - name: Refresh DHCP pools state
   community.routeros.command:
@@ -71,7 +71,7 @@
 # --------------------------------------
 # REMOVE UNUSED DHCP POOLS
 # --------------------------------------
-# Menghapus DHCP Pool yang tidak lagi terdapat pada inventory, termasuk pool lama yang telah diganti namanya.
+# Menghapus DHCP Pool yang tidak lagi terdapat dalam konfigurasi inventory.
 
 - name: Remove unused DHCP pools
   community.routeros.command:

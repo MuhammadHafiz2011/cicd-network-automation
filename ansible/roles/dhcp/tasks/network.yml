@@ -7,7 +7,7 @@
 # ----------------------------
 # GET CURRENT DHCP NETWORKS
 # ----------------------------
-# Menyimpan konfigurasi DHCP Network yang sedang aktif pada MikroTik.
+# Mengambil konfigurasi DHCP Network saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DHCP networks
   community.routeros.command:
@@ -16,7 +16,7 @@
   register: dhcp_network_all
   changed_when: false
 
-# Menyusun daftar DHCP Network yang saat ini terdapat pada MikroTik sebagai acuan untuk proses sinkronisasi konfigurasi.
+# Menyusun daftar DHCP Network yang saat ini terdapat pada MikroTik.
 - name: Build existing network list
   set_fact:
     existing_networks: >-
@@ -25,7 +25,7 @@
         | regex_findall('address=([0-9./]+)')
       }}
 
-# Menyusun daftar DHCP Network berdasarkan konfigurasi pada inventory.
+# Menyusun daftar DHCP Network yang diinginkan berdasarkan inventory.
 - name: Build desired DHCP network list
   set_fact:
     desired_networks: "{{ mikrotik_dhcp | map(attribute='dhcp_network') | list }}"
@@ -33,7 +33,7 @@
 # ------------------------------
 # REMOVE UNUSED DHCP NETWORKS
 # ------------------------------
-# Menghapus DHCP Network yang tidak lagi terdapat pada inventory, termasuk network lama yang telah diganti subnetnya.
+# Menghapus DHCP Network yang tidak lagi terdapat dalam konfigurasi inventory.
 
 - name: Remove unused DHCP networks
   community.routeros.command:
@@ -75,7 +75,7 @@
 # -------------------
 # ADD DHCP NETWORK  
 # -------------------
-# Menambahkan DHCP Network baru apabila subnet belum terdapat pada MikroTik.
+# Menambahkan DHCP Network jika subnet belum terdapat pada MikroTik.
 
 - name: Add DHCP network
   community.routeros.command:

@@ -7,7 +7,7 @@
 # --------------------------
 # GET CURRENT DHCP LEASES
 # --------------------------
-# Menyimpan daftar DHCP Lease yang saat ini aktif pada MikroTik.
+# Mengambil konfigurasi DHCP Lease saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DHCP leases
   community.routeros.command:
@@ -19,6 +19,7 @@
 # ---------------------------------------
 # REMOVE DYNAMIC LEASE FOR MANAGED MAC
 # ---------------------------------------
+# Menghapus Dynamic Lease pada MAC yang dikelola sebelum menerapkan Static Lease.
 
 - name: Remove dynamic lease for managed MAC
   community.routeros.command:

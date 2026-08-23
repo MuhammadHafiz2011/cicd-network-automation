@@ -7,12 +7,12 @@
 # --------------------------
 # GET CURRENT DHCP SERVER
 # --------------------------
+# Mengambil konfigurasi DHCP Server saat ini sebagai kondisi aktual MikroTik.
 
 - name: Get current DHCP servers
   community.routeros.command:
     commands:
       - /ip dhcp-server print detail without-paging
-# Menyimpan daftar DHCP Server yang sedang aktif pada MikroTik.
   register: current_dhcp
   changed_when: false
 
@@ -33,7 +33,7 @@
 # -----------------------------
 # REMOVE UNUSED DHCP SERVERS
 # -----------------------------
-# Menghapus DHCP Server yang tidak lagi terdapat pada inventory, termasuk server lama yang telah diganti namanya.
+# Menghapus DHCP Server yang tidak lagi terdapat dalam konfigurasi inventory.
 
 - name: Remove unused DHCP servers
   community.routeros.command:
@@ -45,7 +45,7 @@
 # ---------------------------
 # ADD / UPDATE DHCP SERVER
 # ---------------------------
-# Menambahkan DHCP Server baru atau memperbarui interface dan address pool apabila konfigurasi berbeda.
+# Menambahkan DHCP Server baru atau membuat ulang server jika interface atau DHCP Pool berubah.
 
 - name: Add or Update DHCP server
   community.routeros.command:
