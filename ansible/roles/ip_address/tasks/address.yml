@@ -4,15 +4,15 @@
 # IP ADDRESS CONFIGURATION
 # ===========================
 
-# -----------------------------------
-# REFRESH CURRENT IP CONFIGURATION
-# -----------------------------------
-# Mengambil ulang konfigurasi IP setelah proses Add/Update agar data yang digunakan tetap terbaru.
+# -------------------------------
+# GET CURRENT IP CONFIGURATION
+# -------------------------------
 
-- name: Refresh current IP configuration
+- name: Get current IP configuration
   community.routeros.command:
     commands:
       - /ip address export terse
+# Menyimpan konfigurasi IP Address statis yang sedang aktif pada MikroTik.
   register: current_ip
   changed_when: false
 
