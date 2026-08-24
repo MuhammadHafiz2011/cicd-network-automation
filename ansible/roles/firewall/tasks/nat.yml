@@ -25,13 +25,15 @@
   community.routeros.command:
     commands:
       - >
+        # Menyimpan parameter interface dan action dari konfigurasi.
         :local iface "{{ item.out_interface }}";
         :local natAction "{{ item.action }}";
 
+        # Mencari rule SRCNAT yang sudah ada.
         :local existing [/ip firewall nat find chain=srcnat];
 
+        # Menambahkan rule SRCNAT jika belum ada.
         :if ([:len $existing] = 0) do={
-
           /ip firewall nat add
           chain=srcnat
           out-interface=$iface
@@ -39,6 +41,7 @@
 
         } else={
 
+          # Membuat ulang rule jika interface atau action berbeda
           :if (
             [/ip firewall nat get $existing out-interface] != $iface
             or
@@ -124,6 +127,7 @@
   community.routeros.command:
     commands:
       - >
+        # Menyimpan parameter DSTNAT dari konfigurasi.
         :local proto "{{ item.protocol }}";
         :local dstPort "{{ item.dst_port }}";
         :local toAddr "{{ item.to_address }}";
@@ -131,10 +135,12 @@
         :local natAction "{{ item.action }}";
         :local inIface "{{ item.in_interface | default('') }}";
 
+        # Mencari rule DSTNAT berdasarkan port tujuan.
         :local existing [/ip firewall nat find
         chain=dstnat
         dst-port=$dstPort];
 
+        # Menambahkan rule DSTNAT jika belum ada.
         :if ([:len $existing] = 0) do={
 
           /ip firewall nat add
@@ -147,7 +153,7 @@
           to-ports=$toPort;
 
         } else={
-
+          # Membuat ulang rule jika salah satu parameter konfigurasi berbeda.
           :if (
             [/ip firewall nat get $existing protocol] != $proto
             or
@@ -159,7 +165,7 @@
             or
             [/ip firewall nat get $existing in-interface] != $inIface
           ) do={
-
+            # Menghapus rule lama sebelum menerapkan konfigurasi baru.
             /ip firewall nat remove $existing;
 
             /ip firewall nat add

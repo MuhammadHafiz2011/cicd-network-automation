@@ -5,18 +5,6 @@
 # ==================================
 
 # --------------------------------------
-# GET CURRENT DHCP POOLS
-# --------------------------------------
-# Mengambil konfigurasi DHCP Pool saat ini sebagai kondisi aktual MikroTik.
-
-- name: Get current DHCP pools
-  community.routeros.command:
-    commands:
-      - /ip pool print detail without-paging
-  register: current_pool
-  changed_when: false
-
-# --------------------------------------
 # ADD OR UPDATE DHCP POOL
 # --------------------------------------
 # Menambahkan DHCP Pool baru atau memperbarui rentang IP apabila DHCP Pool dengan nama yang sama sudah ada.
@@ -25,13 +13,16 @@
   community.routeros.command:
     commands:
       - >
+        # Menyimpan nama dan rentang IP dari konfigurasi.
         :local pName "{{ item.dhcp_pool }}";
         :local pRange "{{ item.dhcp_range }}";
         :local existing [:len [/ip pool find name=$pName]];
 
+        # Menambahkan DHCP Pool jika belum ditemukan.
         :if ($existing = 0) do={
             /ip pool add name=$pName ranges=$pRange;
         } else={
+            # Memperbarui rentang IP jika DHCP Pool sudah ada tetapi berbeda.
             :if ([/ip pool get [find name=$pName] ranges] != $pRange) do={
                 /ip pool set [find name=$pName] ranges=$pRange;
             }

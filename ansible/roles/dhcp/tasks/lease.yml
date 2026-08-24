@@ -4,18 +4,6 @@
 # DHCP LEASE CONFIGURATION
 # ==================================
 
-# --------------------------
-# GET CURRENT DHCP LEASES
-# --------------------------
-# Mengambil konfigurasi DHCP Lease saat ini sebagai kondisi aktual MikroTik.
-
-- name: Get current DHCP leases
-  community.routeros.command:
-    commands:
-      - /ip dhcp-server lease print detail without-paging
-  register: current_lease
-  changed_when: false
-
 # ---------------------------------------
 # REMOVE DYNAMIC LEASE FOR MANAGED MAC
 # ---------------------------------------
@@ -49,13 +37,16 @@
   community.routeros.command:
     commands:
       - >
+        # Menyimpan parameter DHCP Lease dari konfigurasi.
         :local leaseIP "{{ item.ip_address }}";
         :local leaseMAC "{{ item.mac_address }}";
         :local leaseComment "{{ item.comment }}";
         :local leaseServer "{{ item.dhcp_server }}";
 
+        # Memeriksa apakah DHCP Lease dengan MAC Address tersebut sudah ada.
         :if ([:len [/ip dhcp-server lease find mac-address=$leaseMAC]] = 0) do={
 
+          # Menambahkan DHCP Lease baru jika belum ditemukan
           /ip dhcp-server lease add \
           address=$leaseIP \
           mac-address=$leaseMAC \
@@ -64,6 +55,7 @@
 
         } else={
 
+          # Memperbarui DHCP Lease jika parameter konfigurasi berbeda.
           :if (
             [/ip dhcp-server lease get [find mac-address=$leaseMAC] address] != $leaseIP
             or
@@ -71,7 +63,7 @@
             or
             [/ip dhcp-server lease get [find mac-address=$leaseMAC] server] != $leaseServer
           ) do={
-
+            # Menerapkan konfigurasi terbaru pada DHCP Lease yang sudah ada.
             /ip dhcp-server lease set \
             [find mac-address=$leaseMAC] \
             address=$leaseIP \

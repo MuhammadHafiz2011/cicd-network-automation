@@ -4,17 +4,6 @@
 # IP ADDRESS CONFIGURATION
 # ===========================
 
-# -------------------------------
-# GET CURRENT IP CONFIGURATION
-# -------------------------------
-# Mengambil konfigurasi IP Address saat ini sebagai kondisi aktual MikroTik.
-- name: Get current IP configuration
-  community.routeros.command:
-    commands:
-      - /ip address export terse
-  register: current_ip
-  changed_when: false
-
 # ---------------------------
 # ADD OR UPDATE IP ADDRESS
 # ---------------------------
@@ -24,9 +13,11 @@
   community.routeros.command:
     commands:
       - >
+        # Menyimpan parameter konfigurasi ke variabel lokal RouterOS.
         :local ipAddr "{{ item.ip_address }}";
         :local iface "{{ item.interface }}";
 
+        # Mencari IP Address yang sudah ada pada MikroTik.
         :local existing [/ip address find where address=$ipAddr];
 
         :if ([:len $existing] = 0) do={
@@ -36,7 +27,7 @@
           interface=$iface;
 
         } else={
-
+          # Memperbarui interface jika IP sudah ada tetapi berbeda.
           :if (
             [/ip address get $existing interface] != $iface
           ) do={
