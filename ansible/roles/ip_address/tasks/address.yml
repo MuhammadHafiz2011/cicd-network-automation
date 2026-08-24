@@ -4,6 +4,18 @@
 # IP ADDRESS CONFIGURATION
 # ===========================
 
+# -----------------------------------
+# REFRESH CURRENT IP CONFIGURATION
+# -----------------------------------
+# Mengambil ulang konfigurasi IP setelah proses Add/Update agar data yang digunakan tetap terbaru.
+
+- name: Refresh current IP configuration
+  community.routeros.command:
+    commands:
+      - /ip address export terse
+  register: current_ip
+  changed_when: false
+
 # ---------------------------
 # ADD OR UPDATE IP ADDRESS
 # ---------------------------
