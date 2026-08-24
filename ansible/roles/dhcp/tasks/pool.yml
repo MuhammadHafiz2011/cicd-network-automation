@@ -5,6 +5,18 @@
 # ==================================
 
 # --------------------------------------
+# GET CURRENT DHCP POOLS
+# --------------------------------------
+
+- name: Get current DHCP pools
+  community.routeros.command:
+    commands:
+      - /ip pool print detail without-paging
+# Menyimpan daftar DHCP Pool yang sedang aktif pada MikroTik.
+  register: current_pool
+  changed_when: false
+
+# --------------------------------------
 # ADD OR UPDATE DHCP POOL
 # --------------------------------------
 # Menambahkan DHCP Pool baru atau memperbarui rentang IP apabila DHCP Pool dengan nama yang sama sudah ada.
